@@ -11,4 +11,6 @@ class Track:
     album: str
     duration: int
     year: int
+
+
     

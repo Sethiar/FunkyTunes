@@ -11,6 +11,9 @@ from app.presenter.library_presenter import LibraryPresenter
 from services.file_services.player_services.player_services import PlayerServices
 from app.controllers.player_service_controller import PlayerServiceController
 
+from services.file_services.playlist_services.playlist_services import PlaylistServices
+from app.controllers.playlist_controller import PlaylistController
+
 from core.logger import logger
 
 class AppManager:
@@ -40,24 +43,32 @@ class AppManager:
         self.library_service = LibraryServices(session_factory())
         logger.info("LibraryServices initialisé")
         
-        
+        # Service Playlist
+        self.playlist_service = PlaylistServices()
+        logger.info("PlaylistService initialisé")
+
         # Services du Lecteur
         self.player_service = PlayerServices()
         logger.info("PlayerServices initialisé")
 
+
         # PlayerServices Controller
         self.player_service_controller = PlayerServiceController(
             self.home_screen.player_controls,
-            self.player_service
+            self.player_service,
+            self.playlist_service
         )
         logger.info("PlayerServicesController initialisé")
         
-        # ===============================
-        # Chargement de la playlist
-        # ===============================
-        tracks_paths = self.library_service.get_track_file_paths()
-        logger.info(f"{len(tracks_paths)} pistes récupérées depuis la bibliothèque")
-        self.player_service_controller.load_playlist(tracks_paths)
+        # Playlist Controller
+        self.playlist_controller = PlaylistController(
+        self.home_screen.playlist_panel,
+        self.playlist_service,
+        self.player_service,
+        self.library_service
+        )
+        logger.info("PlaylistController initialisé")
+        
         
         # Presenter
         self.library_presenter = LibraryPresenter(

@@ -19,6 +19,7 @@ from app.UI.molecules.player_controls import PlayerControls
 from app.UI.molecules.sort_tracks import SortTracks
 
 from app.UI.organisms.library_display_menu import LibraryDisplayMenu
+from app.UI.molecules.playlist_panel import PlaylistPanel
 
 
 # Classe de l'écran principal
@@ -101,9 +102,22 @@ class HomeScreen(QWidget):
         self.inner_layout.addLayout(self.sort_controls)
         
         # ===== Zone principale d'affichage (menu bibliothèque + pistes)
+        # ===== Zone principale d'affichage (playlist + bibliothèque)
+        self.main_content = QWidget()
+        self.main_content_layout = QHBoxLayout(self.main_content)
+        self.main_content_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_content_layout.setSpacing(10)
+
+        # Playlist panel
+        self.playlist_panel = PlaylistPanel()
+        self.main_content_layout.addWidget(self.playlist_panel, stretch=0)
+
+        # Bibliothèque
         self.library_display = LibraryDisplayMenu()
-        # Ajout des composants au layout interne
-        self.inner_layout.addWidget(self.library_display)
+        self.main_content_layout.addWidget(self.library_display, stretch=1)
+
+        # Ajout au layout interne
+        self.inner_layout.addWidget(self.main_content)
         
         # Ajout du layout interne au layout de contenu
         self.content_layout.addWidget(self.inner_widget)
