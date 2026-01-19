@@ -1,0 +1,33 @@
+
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environnements
+.env
+.env.*
+.venv/
+venv/
+
+# Logs
+*.log
+logs/
+
+# Base de données locale
+*.db
+*.sqlite3
+
+# Qt / PySide
+*.qmlc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+

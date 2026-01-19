@@ -1,0 +1,9 @@
+/* core/styles/molecules/player_controls.qss */
+
+/* Style pour les contrôles du lecteur audio */
+QWidget[component="player-controls"] {
+    background-color: #9dc1e9;
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+}
+

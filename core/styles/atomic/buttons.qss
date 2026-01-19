@@ -1,0 +1,34 @@
+/* ===== Boutons atomic ===== */
+QPushButton {
+    background-color: #e0e0e0;  /* neutre pour l'instant */
+    color: #222;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 4px;
+}
+
+QPushButton:hover {
+    background-color: #d5d5d5;
+}
+
+QPushButton:pressed {
+    background-color: #c8c8c8;
+}
+
+QPushButton:disabled {
+    background-color: #f0f0f0;
+    color: #999;
+}
+
+/* Variante “menu” */
+QPushButton[variant="menu"] {
+    background-color: #ecad24;
+    color: #2c3e50;
+    text-align: left;
+    padding: 10px 16px;
+}
+
+QPushButton[variant="menu"]:hover {
+    background-color: #ecf0f1;
+}

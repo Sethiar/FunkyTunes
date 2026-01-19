@@ -1,0 +1,26 @@
+/* Styles pour la barre de progression personnalisée */
+QProgressBar {
+    background-color: #2d2d2d;
+    border-radius: 5px;
+    height: 10px;
+}
+
+QProgressBar::chunk {
+    background-color: #4CAF50;
+    border-radius: 5px;
+}
+
+QProgressBar::text {
+    color: #2d2d2d;
+    font-weight: bold;
+    font-size: 10px;
+}
+QProgressBar::chunk:disabled {
+    background-color: #555555;
+}
+
+QProgressBar:disabled {
+    background-color: #3a3a3a;
+    color: #888888;
+}
+

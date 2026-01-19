@@ -1,0 +1,15 @@
+/* app/core/styles/atomic/search_input.qss */
+
+/* Stylesheet for search input fields */
+QLineEdit[variant="search"] {
+    background-color: #f0f0f0;
+    border: 1px solid #6d6d6e;
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+QLineEdit[variant="search"]:focus {
+    border: 1px solid #3498db;
+    background-color: #fff;
+}
