@@ -19,10 +19,10 @@ class LibraryServices:
     Service principal pour gérer la bibliothèque musicale.
 
     Responsabilités :
-        - Importer des fichiers depuis un dossier.
-        - Suivi de progression avec callback.
-        - Annulation de l'import en cours.
-        - Fournir les pistes pour l'affichage.
+        - Importer des fichiers audio depuis un dossier
+        - Suivi de progression via callback
+        - Annulation de l'import en cours
+        - Fournir les pistes pour l'affichage ou le player
     """
 
     def __init__(self, db_session):
@@ -30,28 +30,31 @@ class LibraryServices:
         Initialise le service avec une session SQLAlchemy.
 
         Args:
-            db_session: session SQLAlchemy
+            db_session: session SQLAlchemy pour accéder aux tables Track, Album, Artist
         """
         self.db = db_session
         self._cancelled = False
         
-            
+    
+    # ========================== #
+    #       Importation          #
+    # ========================== #     
     def cancel_import(self):
-        """Permet d’arrêter l’import en cours."""
+        """Annulation de l'importation en cours."""
         logger.info("LibraryServices : Import annulé demandé")
         self._cancelled = True
         
 
     def import_from_directory(self, root_path: str, progress_callback=None) -> ImportResult:
         """
-        Importe tous les fichiers audio d'un dossier.
+        Importation de tous les fichiers audio depuis un dossier donné.
 
         Args:
-            root_path (str): Dossier à scanner
-            progress_callback (callable, optional): Callback pour mettre à jour la progression
+            root_path (str): dossier racine à scanner
+            progress_callback (Callable, optional): fonction appelée avec un entier % pour la progression
 
         Returns:
-            ImportResult : Résultat de l'import (SUCCESS, PARTIAL, EMPTY)
+            ImportResult : contient le statut (SUCCESS, PARTIAL, EMPTY), le nombre de fichiers importés et les erreurs éventuelles
         """
         self._cancelled = False
         logger.info(f"LibraryServices : Scan du dossier {root_path}")
@@ -74,9 +77,13 @@ class LibraryServices:
                 break
 
             try:
+                # Extraction des métadonnées (titre, artiste, album, durée, etc.)
                 metadata = file_importer.extract_metadata(file_path)
+                # Import en BDD
                 db_importer.import_track(metadata)
                 imported += 1
+                
+                # Callback de progression
                 if progress_callback:
                     percent = int((i / total) * 100)
                     progress_callback(percent)
@@ -84,15 +91,28 @@ class LibraryServices:
                 logger.exception(f"Erreur sur le fichier {file_path}")
                 errors.append((file_path, str(e)))
 
-        status = ImportStatus.SUCCESS if not errors else (
-            ImportStatus.PARTIAL if imported else ImportStatus.EMPTY
-        )
+        # Déterminer le statut final
+        if errors and imported:
+            status = ImportStatus.PARTIAL
+        elif not errors:
+            status = ImportStatus.SUCCESS
+        else:
+            status = ImportStatus.EMPTY
+
         logger.info(f"LibraryServices : Import terminé ({status.name}), {imported}/{total} fichiers importés")
         return ImportResult(status=status, imported=imported, errors=errors)
 
 
-    def get_tracks(self):
-        """Retourne toutes les pistes sous forme de dataclasses prêtes à l'affichage."""
+    # ========================== #
+    #       Accès aux pistes      #
+    # ========================== #
+    def get_tracks(self) -> List[TrackDataClass]:
+        """
+        Retourne toutes les pistes sous forme de dataclasses pour affichage UI.
+
+        Returns:
+            List[TrackDataClass]: liste des pistes avec titre, artiste, album, durée, année
+        """
         orm_tracks = (
             self.db.query(TrackORM)
             .options(joinedload(TrackORM.artist), joinedload(TrackORM.album))
@@ -107,20 +127,26 @@ class LibraryServices:
                 artist=t.artist.name,
                 album=t.album.title,
                 duration=t.duration_seconds or 0,
-                year=t.album.year if hasattr(t.album, "year") else "Indisponible"
+                year=getattr(t.album, "year", "Indisponible")
             )
             for i, t in enumerate(orm_tracks, start=1)
         ]
+
         logger.info(f"LibraryServices : {len(tracks)} tracks chargées depuis la BDD")
         return tracks
     
     
     def get_track_file_paths(self) -> list[str]:
-        """Retourne les chemins complets pour le PlayerServices"""
+        """
+        Retourne la liste des chemins complets pour le PlayerServices.
+
+        Returns:
+            list[str]: chemins des fichiers audio
+        """
         orm_tracks = self.db.query(TrackORM).order_by(TrackORM.album_id, TrackORM.track_number).all()
         paths = [t.file_path for t in orm_tracks]
+
         logger.info(f"LibraryServices : {len(paths)} tracks pour le PlayerServices")
-        
         return paths
     
     

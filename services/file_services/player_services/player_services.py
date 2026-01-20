@@ -12,74 +12,75 @@ from core.logger import logger
 class PlayerServices(QObject):
     """
     Service de lecture audio local.
-    Gère la playlist, la lecture, le volume, le mute, et les signaux Qt.
+    Gère la lecture d'un fichier audio à la fois, le volume et le mute.
+    N'inclut pas la gestion de playlist complète.
+    
+    Rôle :
+        - Gérer la lecture de fichiers audio locaux
+        - Contrôler le volume et le mute
+        - Émettre des signaux Qt pour l'état de lecture et le volume
+
+    Signaux :
+        playback_state_changed(str) : 'playing', 'paused', 'stopped'
+        volume_changed(float) : volume entre 0.0 et 1.0
     """
-    # ============ #
-    #    Signaux   #
-    # ============ #
+    
+    # ============================ #
+    #            Signaux           #
+    # ============================ #
     playback_state_changed = Signal(str)
     volume_changed = Signal(float)
     
     def __init__(self):
+        """
+        Initialialisation du lecteur audio et configuration de QAudioOutput.
+        """
         super().__init__()
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
         self.player.setAudioOutput(self.audio_output)
         
-        # Playlist : liste des chemins
-        self.playlist = []
-        self.current_index = -1
-        
+        # Chemin du fichier courant
+        self._current_source: str | None = None
+         
         # État mute
         self._is_muted = False
         
-        
-    # ========================= #
-    #       Playlist API        #
-    # ========================= #
-    def set_playlist(self, tracks: list[str]):
-        """Remplace la playlist par une nouvelle liste de fichiers audio"""
-        self.playlist = tracks
-        self.current_index = 0 if tracks else -1
-        logger.info(f"Playlist mise à jour avec {len(tracks)} pistes.")
+        # Connexion pour suivre l'état réel du player Qt
+        self.player.playbackStateChanged.connect(self._on_state_changed)
         
         
     # ========================== #
     #    Contrôles playback      #
     # ========================== #      
-    def handle_play(self, track_path: str | None = None):
+    def handle_play(self, file_path: str):
         """
-        Lit la piste donnée. Si track_path est None, lit la piste courante de la playlist.
-        """
-        # Si on a reçu un track à jouer, on met à jour l'index
-        if track_path:
-            try:
-                self.current_index = self.playlist.index(track_path)
-            except ValueError:
-                logger.warning(f"Piste non trouvée dans la playlist : {track_path}")
-                return
+        Lancement de la lecture d'un fichier audio.
 
-        # Vérification de la playlist
-        if not self.playlist or self.current_index == -1:
-            logger.warning("Aucune piste à lire")
+        Args:
+            file_path (str) : chemin du fichier audio à lire
+        """
+        if not file_path or not os.path.exists(file_path):
+            logger.warning(f"Fichier audio invalide : {file_path}")
             return
-
-        file_path = self.playlist[self.current_index]
         
-        # Définir le fichier à lire
-        self.player.setSource(QUrl.fromLocalFile(file_path))
-       
+        # Si le fichier diffèrent de celui en cours -> Préparation
+        if file_path != self._current_source:
+            self._current_source = file_path
+            self.player.setSource(QUrl.fromLocalFile(file_path))
+
         self.player.play()
         logger.info(f"Lecture : {file_path}")
         
     
     def handle_pause(self):
+        """Mise en pause de la lecture."""
         self.player.pause()
         logger.info("Pause")
         
     
-    
     def handle_stop(self):
+        """Arrêt de la lecture."""
         self.player.stop()
         logger.info("Stop")
     
@@ -87,20 +88,71 @@ class PlayerServices(QObject):
     # ========================= #
     #      Contrôles volume     #
     # ========================= #
+    def set_volume(self, value: float):
+        """
+        Définition du volume du lecteur.
+
+        Args:
+            value (float) : volume entre 0.0 et 1.0
+        """
+        value = max(0.0, min(1.0, value))
+        self.audio_output.setVolume(value)
+        self.volume_changed.emit(value)
+        logger.info(f"Volume : {value}")
+    
+    
     def handle_volume_up(self):
-        self.player.setVolume(min(self.player.volume() + 10, 100))
-        self.volume_changed.emit(self.player.volume() / 100)
+        """Augmentation du volume de 10%."""
+        current = self.audio_output.volume()
+        self.set_volume(current + 0.1)
         logger.info(f"Volume augmenté")
 
+
     def handle_volume_down(self):
-        self.player.setVolume(max(self.player.volume() - 10, 0))
-        self.volume_changed.emit(self.player.volume() / 100)
+        """Diminution du volume de 10%."""
+        current = self.audio_output.volume()
+        self.set_volume(current - 0.1)
         logger.info(f"Volume diminué")
+        
 
     def handle_volume_mute(self):
+        """Activation ou désactivation du mute."""
         self._is_muted = not self._is_muted
         self.audio_output.setMuted(self._is_muted)
         logger.info(f"Mute : {self._is_muted}")
 
-        
+    
+    # ========================== #
+    #   Méthodes pour lecture    #
+    # ========================== #
+    def _on_state_changed(self, state: QMediaPlayer.PlaybackState):
+        """
+        Slot interne pour convertir l'état Qt en chaîne lisible et émettre le signal.
+        """
+        mapping = {
+            QMediaPlayer.PlayingState: "playing",
+            QMediaPlayer.PausedState: "paused",
+            QMediaPlayer.StoppedState: "stopped",
+        }
+        state_str = mapping.get(state, "unknown")
+        self.playback_state_changed.emit(state_str)
+    
+    
+    def prepare(self, file_path: str):
+        """
+        Prépare une piste pour lecture sans la lancer.
+
+        Args:
+            file_path (str) : chemin du fichier à préparer
+        """
+        if not file_path or not os.path.exists(file_path):
+            logger.warning(f"Fichier audio invalide : {file_path}")
+            return
+
+        if file_path != self._current_source:
+            self._current_source = file_path
+            self.player.setSource(QUrl.fromLocalFile(file_path))
+    
+        logger.info(f"Piste préparée : {file_path}")   
+               
         
