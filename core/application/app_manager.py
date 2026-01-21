@@ -5,14 +5,20 @@ from typing import Callable
 from sqlalchemy.orm import Session
 
 from app.UI.screens.home_screen import HomeScreen
-from app.controllers.home_screen_controller import HomeScreenController
-from services.file_services.library_services.library_services import LibraryServices
-from app.presenter.library_presenter import LibraryPresenter
-from services.file_services.player_services.player_services import PlayerServices
-from app.controllers.player_service_controller import PlayerServiceController
 
-from services.file_services.playlist_services.playlist_services import PlaylistServices
+# Controllers
+from app.controllers.home_screen_controller import HomeScreenController
+from app.controllers.player_service_controller import PlayerServiceController
 from app.controllers.playlist_controller import PlaylistController
+from app.controllers.library_navigation_controller import LibraryNavigationController
+
+from app.presenter.library_presenter import LibraryPresenter
+
+# Services
+from services.file_services.library_services.library_services import LibraryServices
+from services.file_services.player_services.player_services import PlayerServices
+from services.file_services.playlist_services.playlist_services import PlaylistServices
+
 
 from core.logger import logger
 
@@ -62,12 +68,21 @@ class AppManager:
         
         # Playlist Controller
         self.playlist_controller = PlaylistController(
-        self.home_screen.playlist_panel,
-        self.playlist_service,
-        self.player_service,
-        self.library_service
+            ui=self.home_screen.playlist_panel, 
+            playlist_service=self.playlist_service,
+            player_service=self.player_service,
+            library_service=self.library_service,
+            sort_tracks_widget=self.home_screen.sort_tracks  
         )
         logger.info("PlaylistController initialisé")
+        
+        
+        # Playlist navigation Controller
+        self.library_navigation_controller = LibraryNavigationController(
+            menu_library=self.home_screen.library_display.menu_library,
+            home_screen=self.home_screen
+        )
+        logger.info("LibraryNavigator initialisé")
         
         
         # Presenter

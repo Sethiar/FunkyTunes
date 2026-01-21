@@ -8,7 +8,8 @@ Fenêtre principale de l'application utilisant PySide6.
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QHBoxLayout
+    QHBoxLayout, 
+    QStackedWidget
 )
 from PySide6.QtCore import Qt, Signal
 
@@ -19,7 +20,7 @@ from app.UI.molecules.player_controls import PlayerControls
 from app.UI.molecules.sort_tracks import SortTracks
 
 from app.UI.organisms.library_display_menu import LibraryDisplayMenu
-from app.UI.molecules.playlist_panel import PlaylistPanel
+from app.UI.screens.window_services.playlist_panel import PlaylistPanel
 
 
 # Classe de l'écran principal
@@ -52,12 +53,25 @@ class HomeScreen(QWidget):
     # ================================================= #
     def _build_ui(self):
         """Construit l'interface utilisateur de l'écran principal."""
-            
+        self._build_root_layout()
+        self._build_menu()
+        self._build_content()
+        self._build_top_bar()
+        self._build_center_stack()
+        self._assemble_layouts()
+        
+    
+    # ================================================= #
+    #             Construction par étapes               #
+    # ================================================= #
+    def _build_root_layout(self):
         # ===== Layout racine (menu gauche / contenu droite)
         self.main_layout = QHBoxLayout()
         self.main_layout.setSpacing(0)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
-        
+    
+    
+    def _build_menu(self):
         # ===== Menu gauche
         self.menu_container = QWidget()
         self.menu_layout = QVBoxLayout(self.menu_container)
@@ -66,7 +80,9 @@ class HomeScreen(QWidget):
         # Menu principal
         self.menu = MenuPrincipal()
         self.menu_layout.addWidget(self.menu)
-        
+    
+    
+    def _build_content(self):    
         # ===== Contenu droit
         self.content_container = QWidget()
         self.content_layout = QVBoxLayout(self.content_container)
@@ -82,16 +98,15 @@ class HomeScreen(QWidget):
         self.inner_layout = QVBoxLayout(self.inner_widget)
         self.inner_layout.setContentsMargins(0, 0, 0, 0)
         self.inner_layout.setSpacing(10)
-        self.inner_layout.setAlignment(Qt.AlignRight | Qt.AlignTop)
 
+    
+    def _build_top_bar(self):
         # Contrôles de tri + Contrôles du lecteur
         self.sort_controls = QHBoxLayout()
-        self.sort_controls.setContentsMargins(0, 0, 0, 0)
         self.sort_controls.setSpacing(10)
         
         # Tri de la bibliothèque
         self.sort_tracks = SortTracks()
-        
         # Contrôles du lecteur
         self.player_controls = PlayerControls()
         
@@ -101,24 +116,32 @@ class HomeScreen(QWidget):
         
         self.inner_layout.addLayout(self.sort_controls)
         
-        # ===== Zone principale d'affichage (menu bibliothèque + pistes)
+    
+    def _build_center_stack(self):   
         # ===== Zone principale d'affichage (playlist + bibliothèque)
         self.main_content = QWidget()
         self.main_content_layout = QHBoxLayout(self.main_content)
         self.main_content_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_content_layout.setSpacing(10)
 
-        # Playlist panel
-        self.playlist_panel = PlaylistPanel()
-        self.main_content_layout.addWidget(self.playlist_panel, stretch=0)
+       # ===== Zone centrale avec switch
+        self.center_stack = QStackedWidget()
 
-        # Bibliothèque
+        # Écran bibliothèque (par défaut)
         self.library_display = LibraryDisplayMenu()
-        self.main_content_layout.addWidget(self.library_display, stretch=1)
+        # Écran playlist (caché au départ)
+        self.playlist_panel = PlaylistPanel()
 
-        # Ajout au layout interne
+        self.center_stack.addWidget(self.library_display)
+        self.center_stack.addWidget(self.playlist_panel)
+        # Affiché au démarrage
+        self.center_stack.setCurrentIndex(0)
+
+        # Ajout des widget au layout
+        self.main_content_layout.addWidget(self.center_stack)
         self.inner_layout.addWidget(self.main_content)
-        
+    
+    
+    def _assemble_layouts(self):
         # Ajout du layout interne au layout de contenu
         self.content_layout.addWidget(self.inner_widget)
 
@@ -140,6 +163,14 @@ class HomeScreen(QWidget):
         self.menu.request_export.connect(self.request_export_library.emit)
         self.menu.open_settings_requested.connect(self.request_open_settings.emit)
         self.menu.help_requested.connect(self.request_help.emit)
+        
+    
+    # Méthodes utilisateurs    
+    def show_library(self):
+        self.center_stack.setCurrentIndex(0)
+
+    def show_playlist(self):
+        self.center_stack.setCurrentIndex(1)    
 
         
         

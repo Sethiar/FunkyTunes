@@ -19,17 +19,18 @@ class MenuLibrary(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(10)
+        self.library_menu_layout = QVBoxLayout(self)
+        self.library_menu_layout.setSpacing(10)
 
         self._build_ui()
         self._bind_signals()
-
+    
+    
+    # Constuction de l'UI
     def _build_ui(self):
         self.all_tracks_btn = AppButton("Toutes les chansons", variant="library_menu")
         self.edit_track_btn = AppButton("Modifier la chanson", variant="library_menu")
         self.remove_track_btn = AppButton("Supprimer la chanson", variant="library_menu")
-
         self.all_playlist_btn = AppButton("Playlists", variant="library_menu")
 
         for btn in (
@@ -38,15 +39,16 @@ class MenuLibrary(QWidget):
             self.remove_track_btn,
             self.all_playlist_btn,
         ):
-            self.layout.addWidget(btn)
+            self.library_menu_layout.addWidget(btn)
 
-        self.layout.addStretch(1)
+        self.library_menu_layout.addStretch(1)
 
+
+    # Connexion des signaux
     def _bind_signals(self):
         self.all_tracks_btn.clicked.connect(self.requested_all_tracks.emit)
         self.edit_track_btn.clicked.connect(self.requested_edit_track.emit)
         self.remove_track_btn.clicked.connect(self.requested_remove_track.emit)
-
         self.all_playlist_btn.clicked.connect(self.requested_all_playlist.emit)
         
         

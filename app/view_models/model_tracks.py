@@ -24,8 +24,12 @@ class TracksTableModel(QAbstractTableModel):
     
     def columnCount(self, parent=QModelIndex()) -> int:
         return len(self.HEADERS)
+
     
-    
+    def track_at(self, row: int) -> Track:
+        return self._tracks[row]
+
+
     def data(self, index: QModelIndex, role=Qt.DisplayRole):
         if not index.isValid():
             return None
@@ -45,6 +49,7 @@ class TracksTableModel(QAbstractTableModel):
             return self._data_for_column(track, column)
         
         return None
+    
     
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role != Qt.DisplayRole:
@@ -70,6 +75,7 @@ class TracksTableModel(QAbstractTableModel):
             case 4: return self._format_duration(track.duration)
             case 5: return track.year
             case _: return None
+
 
     @staticmethod
     def _format_duration(seconds: int) -> str:

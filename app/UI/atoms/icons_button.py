@@ -44,3 +44,23 @@ class IconButton_2(QPushButton):
         self.setProperty("variant", "icon-button-2")
         
         
+class IconButton_3(QPushButton):
+    """
+    Classe 3 pour icône dans l'écran des playlists.
+    Utilisée afin d'afficher les boutons de tri
+    """        
+    def __init__(self, icon_name: str, tooltip: str = "", size: int = 150):
+        super().__init__()
+        self.setFixedSize(size, size)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setToolTip(tooltip)
+        
+        icon = load_icon(icon_name)
+        self.setIcon(icon)
+        
+        self.setProperty("variant", "icon-button-3")
+        
+        
+
+        
+        

@@ -18,6 +18,7 @@ class PlayerServiceController(QObject):
     - Relier les actions de l'UI aux services audio et playlist
     - Suivre les changements d'état et mettre à jour l'UI
     - Ne fait pas de lecture directe ou de gestion de fichiers
+    
     """
     
     def __init__(
