@@ -1,11 +1,16 @@
 # app/UI/organisms/tracks_view.py
 
 from typing import List, Dict
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QListWidget, QListWidgetItem, QLabel
-)
-from PySide6.QtCore import Signal
 
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QListWidget,
+    QListWidgetItem, QLabel, QScrollArea, QGridLayout
+)
+from PySide6 import QtCore
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QStandardItem, QIcon
+
+from app.UI.organisms.explorer_grid_view import ExplorerGridView
 from core.entities.track import Track
 
 
@@ -30,6 +35,7 @@ class TracksView(QWidget):
         self._populate()
         self.list_widget.itemClicked.connect(self._on_item_clicked)
 
+
     def _populate(self):
         self.list_widget.clear()
         for track in self.tracks:
@@ -37,10 +43,12 @@ class TracksView(QWidget):
             item.setData(256, track)
             self.list_widget.addItem(item)
 
+
     def set_tracks(self, tracks: List[Track]):
         """Met à jour la liste des tracks affichées."""
         self.tracks = tracks
         self._populate()
+
 
     def _on_item_clicked(self, item: QListWidgetItem):
         track: Track = item.data(256)
@@ -52,33 +60,38 @@ class TracksView(QWidget):
 # ============================ #
 class TracksByAlbumView(QWidget):
     """
-    Vue pour afficher les albums. 
+    Vue pour afficher les albums en grille type "Explorer".
     Cliquer sur un album émet la liste de tracks de cet album.
     """
-    album_selected = Signal(list)
+    
+    album_selected = Signal(object)
 
-    def __init__(self, albums: Dict[str, List[Track]]):
-        super().__init__()
-        self.albums = albums
-
-        self.list_widget = QListWidget()
+    def __init__(self, albums: Dict[str, List[Track]], album_icons: Dict[str, str] = None, parent=None):
+        """
+        albums: dict[album_name -> list[Track]]
+        album_icons: dict[album_name -> path_to_image]
+        """
+        super().__init__(parent)
+        
+        self.album_icons = album_icons or {}
+        
+        
+        items = {
+            album: {
+                "title": album.title,
+                "icon": album_icons.get(album, "resources/icons/album_icon.svg"),
+                "payload": tracks
+            }
+            for album, tracks in albums.items()
+        }
+        
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel("Albums"))
-        layout.addWidget(self.list_widget)
 
-        self._populate()
-        self.list_widget.itemClicked.connect(self._on_item_clicked)
+        explorer = ExplorerGridView(items, columns=4, icon_size=60)
+        explorer.item_clicked.connect(self.album_selected)
 
-    def _populate(self):
-        self.list_widget.clear()
-        for album_name, tracks in sorted(self.albums.items()):
-            item = QListWidgetItem(album_name)
-            item.setData(256, tracks)
-            self.list_widget.addItem(item)
-
-    def _on_item_clicked(self, item: QListWidgetItem):
-        tracks: List[Track] = item.data(256)
-        self.album_selected.emit(tracks)
+        layout.addWidget(explorer)
 
 
 # ============================ #
@@ -89,30 +102,27 @@ class TracksByArtistView(QWidget):
     Vue pour afficher les artistes.
     Cliquer sur un artiste émet la liste de tracks de cet artiste.
     """
-    artist_selected = Signal(list)
+    artist_selected = Signal(object)
 
-    def __init__(self, artists: Dict[str, List[Track]]):
-        super().__init__()
-        self.artists = artists
+    def __init__(self, artists: Dict[str, List[Track]], parent=None):
+        super().__init__(parent)
 
-        self.list_widget = QListWidget()
+        items = {
+            artist: {
+                "title": artist,
+                "icon": "resources/icons/album_icon.svg",
+                "payload": tracks
+            }
+            for artist, tracks in artists.items()
+        }
+
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel("Artistes"))
-        layout.addWidget(self.list_widget)
 
-        self._populate()
-        self.list_widget.itemClicked.connect(self._on_item_clicked)
+        explorer = ExplorerGridView(items, columns=5, icon_size=50)
+        explorer.item_clicked.connect(self.artist_selected)
 
-    def _populate(self):
-        self.list_widget.clear()
-        for artist_name, tracks in sorted(self.artists.items()):
-            item = QListWidgetItem(artist_name)
-            item.setData(256, tracks)
-            self.list_widget.addItem(item)
-
-    def _on_item_clicked(self, item: QListWidgetItem):
-        tracks: List[Track] = item.data(256)
-        self.artist_selected.emit(tracks)
+        layout.addWidget(explorer)
 
 
 # ============================ #
@@ -125,17 +135,29 @@ class TracksByGenreView(QWidget):
     """
     genre_selected = Signal(list)
 
-    def __init__(self, genres: Dict[str, List[Track]]):
-        super().__init__()
-        self.genres = genres
+    def __init__(self, genres: Dict[str, List[Track]], parent=None):
+        super().__init__(parent)
 
-        self.list_widget = QListWidget()
+        items = {
+            genre: {
+                "title": genre,
+                "icon": "resources/icons/genre_icon.svg",
+                "tracks": tracks
+            }
+            for genre, tracks in genres.items()
+        }
+
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel("Genres"))
-        layout.addWidget(self.list_widget)
+
+        explorer = ExplorerGridView(items, columns=6, icon_size=48)
+        explorer.item_clicked.connect(self.genre_selected)
+
+        layout.addWidget(explorer)
 
         self._populate()
         self.list_widget.itemClicked.connect(self._on_item_clicked)
+
 
     def _populate(self):
         self.list_widget.clear()
@@ -143,6 +165,7 @@ class TracksByGenreView(QWidget):
             item = QListWidgetItem(genre_name)
             item.setData(256, tracks)
             self.list_widget.addItem(item)
+
 
     def _on_item_clicked(self, item: QListWidgetItem):
         tracks: List[Track] = item.data(256)

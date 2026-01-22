@@ -122,10 +122,11 @@ class LibraryServices:
 
         tracks = [
             TrackDataClass(
+                id=t.id,
                 counttrack=i,
                 title=t.title,
                 artist=t.artist.name,
-                album=t.album.title,
+                album=t.album,
                 duration=t.duration_seconds or 0,
                 year=getattr(t.album, "year", "Indisponible")
             )

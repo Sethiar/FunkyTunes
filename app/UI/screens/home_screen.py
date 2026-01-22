@@ -6,10 +6,7 @@ Fenêtre principale de l'application utilisant PySide6.
 """
 
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout, 
-    QStackedWidget
+    QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget
 )
 from PySide6.QtCore import Qt, Signal
 
@@ -35,9 +32,9 @@ class HomeScreen(QWidget):
     request_open_settings = Signal()
     request_help = Signal()
     
-    # ================================================= #
-    #              Initialisation du widget             #
-    # ================================================= #
+    # ============================= #
+    #   Initialisation du widget    #
+    # ============================= #
     def __init__(self):
         super().__init__()
         
@@ -48,9 +45,9 @@ class HomeScreen(QWidget):
         self._connect_signals()
         
         
-    # ================================================= #
-    #              Construction de l'UI                 #
-    # ================================================= #
+    # ============================= #
+    #     Construction de l'UI      #
+    # ============================= #
     def _build_ui(self):
         """Construit l'interface utilisateur de l'écran principal."""
         self._build_root_layout()
@@ -165,12 +162,13 @@ class HomeScreen(QWidget):
         self.menu.help_requested.connect(self.request_help.emit)
         
     
-    # Méthodes utilisateurs    
     def show_library(self):
+        """Affiche toutes les pistes de la bibliothèque dans la table principale."""
         self.center_stack.setCurrentIndex(0)
 
     def show_playlist(self):
-        self.center_stack.setCurrentIndex(1)    
+        """Affiche la vue playlist."""
+        self.center_stack.setCurrentIndex(1)
 
         
         

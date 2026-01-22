@@ -17,10 +17,11 @@ class SortTracks(QWidget):
     # =========================== #
     #           Signaux           #
     # =========================== #
-    sort_by_artist = Signal()
+    sort_library = Signal()
     sort_by_album = Signal()
+    sort_by_artist = Signal()
     sort_by_genre = Signal()
-    sort_favorites = Signal()
+    sort_by_favorites = Signal()
     
     def __init__(self):
         super().__init__()
@@ -47,7 +48,7 @@ class SortTracks(QWidget):
         self.btn_artist.clicked.connect(self.sort_by_artist.emit)
         self.btn_album.clicked.connect(self.sort_by_album.emit)
         self.btn_genre.clicked.connect(self.sort_by_genre.emit)
-        self.btn_favorites.clicked.connect(self.sort_favorites.emit)
+        self.btn_favorites.clicked.connect(self.sort_by_favorites.emit)
         
         
     # Slots de debug
@@ -65,6 +66,6 @@ class SortTracks(QWidget):
 
     def _on_favorites_clicked(self):
         print("[SortTracks] Favorites clicked")
-        self.sort_favorites.emit()
+        self.sort_by_favorites.emit()
                 
         

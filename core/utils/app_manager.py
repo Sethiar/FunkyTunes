@@ -80,7 +80,8 @@ class AppManager:
         # Playlist navigation Controller
         self.library_navigation_controller = LibraryNavigationController(
             menu_library=self.home_screen.library_display.menu_library,
-            home_screen=self.home_screen
+            home_screen=self.home_screen,
+            library_service=self.library_service
         )
         logger.info("LibraryNavigator initialisé")
         

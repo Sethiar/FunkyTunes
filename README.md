@@ -2,6 +2,32 @@
 # FunkyTunes - Architecture logicielle  #
 # ===================================== #
 
+Ce projet sert à démontrer ma maîtrise des architectures logicielles, du découplage UI/métier, 
+et des bonnes pratiques sur une application desktop réelle.
+
+
+## TODO : Prochaine étape API pour compléter les informations de la base de données. :
+
+1️⃣ On conçoit l’architecture exacte du module metadata
+2️⃣ On choisit MusicBrainz + fallback Last.fm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## 1. Couche UI
 - `app/UI/atoms/` : composants de base (boutons, labels)
 - `app/UI/molecules/` : combinaisons d’atomes (menus, barres)
@@ -36,16 +62,21 @@ Funkytunes/
 ├─ venv/                             # Environnement virtuel (gitignore)
 ├─ funkytunes.db                     # Base de données (enregistrement)
 ├─ app/                              # Application principale
-│   ├─ controllers/                  # Orchestration et flux
-│   │   ├─ __init__.py               # Gestion des clics, appels models/views/services
-│   │   ├─ homescreen_controller.py
-│   │   ├─ import_source_controller.py
-│   │   ├─
 │   ├─ application
 │   │   ├─ __init__.py
 │   │   ├─ import_library.py
 │   │   ├─ refresh_library.py
-│   │   ├─
+│   │   ├─ 
+│   │   ├─ 
+
+│   ├─ controllers/                  
+│   │   ├─ __init__.py               
+│   │   ├─ home_screen_controller.py
+│   │   ├─ import_source_controller.py
+│   │   ├─ library_navigation_controller.py
+│   │   ├─ player_service_controller.py
+│   │   ├─ playlist_controller.py
+│   │   ├─ tracks_sort_controller.py   
 │   │ 
 │   ├─ models/                       # Objets métiers ORM (Track, Album, Artist)
 │   │   ├─ __init__.py 
@@ -62,7 +93,7 @@ Funkytunes/
 │   ├─ UI/                           # Atomic design (atomes, molécules, organismes)
 │   │   ├─ __init__.py
 │   │   ├─ atoms/ 
-│   │   ├─ molecules/                 # combinaisons d’atomes
+│   │   ├─ molecules/                # combinaisons d’atomes
 │   │   ├─ organisms/                # sections complètes
 │   │   └─ screens/
 │   │ 
@@ -88,8 +119,9 @@ Funkytunes/
 │   │   ├─ dark.qss
 │   │   └─
 │   │ 
-│   └─ icon_loader.py                # Fichiers comportant le code pour mettre à disposition les icônes          
-│           
+│   ├─ icon_loader.py                # Fichiers comportant le code pour mettre à disposition les icônes          
+│   └─ logger.py         
+│
 ├─ database
 │   ├─ __init__.py
 │   ├─ base.py
@@ -107,6 +139,11 @@ Funkytunes/
         │   ├─ db_importer.py        # Création Artist/Album/Track en DB
         │   ├─ file_importer.py      # Scan et lecture fichiers audio
         │   ├─ import_result         # Status import
-        │   ├─ library_services.py   # Façade + gestion progression
-        └─  player_services/
-             ├─player_services.py       
+        │   ├─ import_worker.py        
+        │   └─ library_services.py   # Façade + gestion progression
+        │
+        ├─ player_services/
+        │   └─ player_services.py       
+        │
+        ├─ playlist_services
+            └─ playlist_services.py 

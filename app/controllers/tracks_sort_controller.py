@@ -1,7 +1,9 @@
 # app/controllers/tracks_sort_controller.py
 
-from PySide6.QtCore import QObject
 from typing import List, Dict
+
+from PySide6.QtCore import QObject
+
 
 from services.file_services.library_services.library_services import LibraryServices
 from app.UI.organisms.playlist_files.tracks_view import (
@@ -37,21 +39,38 @@ class TracksBySortController(QObject):
         tracks: List[Track] = self.library_service.get_tracks()
         tracks_view = TracksView(tracks)
         tracks_view.track_selected.connect(self.ui.display_tracks)
-        self.ui.replace_main_view(tracks_view)
+        self.ui.replace_main_view("library", tracks_view)
     
     
     # =========================== #
     #    Affichage par album      #
     # =========================== #
     def show_by_album(self):
+        """
+        Affiche les albums sous forme de grille type "Explorer".
+        Cliquer sur un album émet les tracks de cet album.
+        """
         tracks: List[Track] = self.library_service.get_tracks()
+        
         albums: Dict[str, List[Track]] = {}
+        album_icons: Dict[str, str] = {}
+        
         for t in tracks:
+            if not t.album:
+                continue
+            # Regrouper les tracks par album
             albums.setdefault(t.album, []).append(t)
 
-        album_view = TracksByAlbumView(albums)
+            # Récupérer l'icône si présente
+            if t.album.jacket_path:
+                album_icons.setdefault(t.album, t.album.jacket_path)
+
+        # Créer la vue type Explorer avec icônes
+        album_view = TracksByAlbumView(albums, album_icons)
         album_view.album_selected.connect(self.ui.display_tracks)
-        self.ui.replace_main_view(album_view)
+
+        # Remplacer la vue principale (pas d'ouverture d'une nouvelle fenêtre)
+        self.ui.replace_main_view("albums", album_view)
         
         
     # =========================== #
@@ -65,7 +84,7 @@ class TracksBySortController(QObject):
 
         artist_view = TracksByArtistView(artists)
         artist_view.artist_selected.connect(self.ui.display_tracks)
-        self.ui.replace_main_view(artist_view)
+        self.ui.replace_main_view("artists", artist_view)
         
         
         
@@ -80,7 +99,7 @@ class TracksBySortController(QObject):
 
         genre_view = TracksByGenreView(genres)
         genre_view.genre_selected.connect(self.ui.display_tracks)
-        self.ui.replace_main_view(genre_view)
+        self.ui.replace_main_view("genres", genre_view)
     
     
     # =========================== #
@@ -92,6 +111,6 @@ class TracksBySortController(QObject):
 
         favorite_view = TracksByFavoriteView(favorites)
         favorite_view.favorite_selected.connect(self.ui.display_tracks)
-        self.ui.replace_main_view(favorite_view)
+        self.ui.replace_main_view("favorites", favorite_view)
         
         

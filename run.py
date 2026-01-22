@@ -19,8 +19,8 @@ import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 
-from core.application.app_manager import AppManager
-from core.application.style_manager import StyleManager
+from core.utils.app_manager import AppManager
+from core.utils.style_manager import StyleManager
 
 from core.logger import logger
 

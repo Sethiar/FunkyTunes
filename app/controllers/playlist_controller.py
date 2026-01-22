@@ -49,8 +49,6 @@ class PlaylistController(QObject):
         # Lier UI et services
         self._bind_ui()
         self._bind_service()
-        self._bind_sort_buttons(sort_tracks_widget)
-
 
         # Charger la bibliothèque et la playlist au démarrage
         self.init_library()
@@ -102,7 +100,7 @@ class PlaylistController(QObject):
         sort_widget.sort_by_artist.connect(self.sort_controller.show_by_artist)
         sort_widget.sort_by_album.connect(self.sort_controller.show_by_album)
         sort_widget.sort_by_genre.connect(self.sort_controller.show_by_genre)
-        sort_widget.sort_favorites.connect(self.sort_controller.show_favorites)        
+        sort_widget.sort_by_favorites.connect(self.sort_controller.show_favorites)        
     
     
     # ========================= #
