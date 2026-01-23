@@ -124,11 +124,15 @@ class LibraryServices:
             TrackDataClass(
                 id=t.id,
                 counttrack=i,
-                title=t.title,
-                artist=t.artist.name,
-                album=t.album,
+                title=t.title or "",
+                artist_name=t.artist.name if t.artist else "",
+                
+                album_title=t.album.title if t.album else "",
+                album_jacket_path=t.album.jacket_path if t.album else None,
+                
+                genre=t.genre or "",
                 duration=t.duration_seconds or 0,
-                year=getattr(t.album, "year", "Indisponible")
+                year=t.album.release_year if t.album else 0
             )
             for i, t in enumerate(orm_tracks, start=1)
         ]

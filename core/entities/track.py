@@ -15,8 +15,13 @@ class Track:
     id: int
     counttrack: int
     title: str
-    artist: Artist  
-    album: Optional[Album]
+    
+    artist_name: str
+    
+    album_title: str
+    album_jacket_path: Optional[str]
+    
+    genre: str
     duration: int
     year: int
 

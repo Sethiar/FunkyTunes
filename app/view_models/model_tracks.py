@@ -11,7 +11,7 @@ class TracksTableModel(QAbstractTableModel):
     Modélisation de l'affichage des tarcks de funkytunes
     """
     
-    HEADERS = ["Pistes", "Titre", "Artiste", "Album", "Durée", "Année"]
+    HEADERS = ["Pistes", "Titre", "Artiste", "Album", "Genre", "Durée", "Année"]
     
     def __init__(self, tracks: list[Track] | None = None, parent = None):
         super().__init__(parent)
@@ -70,10 +70,11 @@ class TracksTableModel(QAbstractTableModel):
         match column:
             case 0: return track.counttrack
             case 1: return track.title
-            case 2: return track.artist
-            case 3: return track.album
-            case 4: return self._format_duration(track.duration)
-            case 5: return track.year
+            case 2: return track.artist_name
+            case 3: return track.album_title
+            case 6: return track.genre
+            case 5: return self._format_duration(track.duration)
+            case 6: return track.year
             case _: return None
 
 

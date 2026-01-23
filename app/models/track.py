@@ -27,6 +27,7 @@ class Track(Base):
     
     artist = relationship("Artist", back_populates="tracks")
     album = relationship("Album", back_populates="tracks")
+    genre = Column(String, nullable=True)
     playlists = relationship(
         "Playlist",
         secondary=playlist_track_association,
@@ -60,10 +61,10 @@ class Track(Base):
     # ================= Read =================
     @classmethod
     def get_by_id(cls, db: Session, track_id: int):
-        
         track = db.get(cls, track_id)
         
         return track
+
 
     @classmethod
     def get_by_title(cls, db: Session, title: str):
@@ -71,30 +72,35 @@ class Track(Base):
         
         return track
 
+
     @classmethod
     def get_all(cls, db: Session, skip: int = 0, limit: int = 100) -> List["Track"]:
-        
         tracks = db.query(cls).offset(skip).limit(limit).all()
         
         return tracks
 
+
     @classmethod
     def get_by_artist(cls, db: Session, artist_id: int, skip: int = 0, limit: int = 100) -> List["Track"]:
-
         tracks = db.query(cls).filter_by(artist_id=artist_id).offset(skip).limit(limit).all()
 
         return tracks
 
+
     @classmethod
     def get_by_album(cls, db: Session, album_id: int, skip: int = 0, limit: int = 100) -> List["Track"]:
-
         tracks = db.query(cls).filter_by(album_id=album_id).order_by(cls.track_number).offset(skip).limit(limit).all()
 
         return tracks
+    
+    
+    @classmethod
+    def get_by_genre(cls, db: Session, genre: str, skip: int = 0, limit: int = 100):
+        return db.query(cls).filter_by(genre=genre).offset(skip).limit(limit).all()
+
 
     @classmethod
     def get_in_playlist(cls, db: Session, playlist_id: int, skip: int = 0, limit: int = 100) -> List["Track"]:
-
         tracks = (
             db.query(cls)
             .join(playlist_track_association, cls.id == playlist_track_association.c.track_id)
