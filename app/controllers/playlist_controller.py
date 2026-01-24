@@ -41,6 +41,7 @@ class PlaylistController(QObject):
         self.playlist: PlaylistServices = playlist_service
         self.player: PlayerServices = player_service
         self.library_service: LibraryServices = library_service
+        self.sort_tracks_widget = sort_tracks_widget
         
         # Instanciation du controller de tri
         self.sort_controller = TracksBySortController(self.ui, self.library_service)

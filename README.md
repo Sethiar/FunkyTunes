@@ -95,7 +95,7 @@ Funkytunes/
 │   │   ├─ atoms/ 
 │   │   ├─ molecules/                # combinaisons d’atomes
 │   │   ├─ organisms/                # sections complètes
-│   │   └─ screens/
+│   │   └─ screens/                  # Présentation en screens
 │   │ 
 │   └─ view_models/
 │       ├─ __init__.py

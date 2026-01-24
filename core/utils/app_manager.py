@@ -68,11 +68,11 @@ class AppManager:
         
         # Playlist Controller
         self.playlist_controller = PlaylistController(
-            ui=self.home_screen.playlist_panel, 
+            ui=self.home_screen.playlist_panel,
             playlist_service=self.playlist_service,
             player_service=self.player_service,
             library_service=self.library_service,
-            sort_tracks_widget=self.home_screen.sort_tracks  
+            sort_tracks_widget=self.home_screen.sort_tracks,
         )
         logger.info("PlaylistController initialisé")
         

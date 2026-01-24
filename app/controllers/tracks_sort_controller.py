@@ -56,14 +56,14 @@ class TracksBySortController(QObject):
         album_icons: Dict[str, str] = {}
         
         for t in tracks:
-            if not t.album:
+            if not t.album_title:
                 continue
             # Regrouper les tracks par album
-            albums.setdefault(t.album, []).append(t)
+            albums.setdefault(t.album_title, []).append(t)
 
             # Récupérer l'icône si présente
-            if t.album.jacket_path:
-                album_icons.setdefault(t.album, t.album.jacket_path)
+            if t.album_jacket_path:
+                album_icons.setdefault(t.album_title, t.album_jacket_path)
 
         # Créer la vue type Explorer avec icônes
         album_view = TracksByAlbumView(albums, album_icons)
@@ -80,12 +80,11 @@ class TracksBySortController(QObject):
         tracks: List[Track] = self.library_service.get_tracks()
         artists: Dict[str, List[Track]] = {}
         for t in tracks:
-            artists.setdefault(t.artist, []).append(t)
+            artists.setdefault(t.artist_name, []).append(t)
 
         artist_view = TracksByArtistView(artists)
         artist_view.artist_selected.connect(self.ui.display_tracks)
         self.ui.replace_main_view("artists", artist_view)
-        
         
         
     # =========================== #

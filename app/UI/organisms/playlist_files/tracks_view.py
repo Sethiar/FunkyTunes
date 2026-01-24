@@ -78,7 +78,7 @@ class TracksByAlbumView(QWidget):
         
         items = {
             album: {
-                "title": album.title,
+                "title": album,
                 "icon": album_icons.get(album, "resources/icons/album_icon.svg"),
                 "payload": tracks
             }

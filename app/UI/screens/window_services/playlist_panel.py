@@ -252,11 +252,12 @@ class PlaylistPanel(QWidget):
             self.current_dynamic_view.show()
             return
 
-        # ajouter et afficher le nouveau widget
+        # Ajout et affichage du nouveau widget
         self.dynamic_container_layout.addWidget(widget)
         self.dynamic_views[view_name] = widget
         if self.current_dynamic_view:
             self.current_dynamic_view.hide()
+        
         self.current_dynamic_view = widget
         self.current_dynamic_view.show()
         
