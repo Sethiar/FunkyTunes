@@ -71,7 +71,7 @@ Funkytunes/
 
 │   ├─ controllers/                  
 │   │   ├─ __init__.py               
-│   │   ├─ home_screen_controller.py
+│   │   ├─ home_screen_controller.py       # Liaison
 │   │   ├─ import_source_controller.py
 │   │   ├─ library_navigation_controller.py
 │   │   ├─ player_service_controller.py
