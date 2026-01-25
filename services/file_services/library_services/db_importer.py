@@ -1,9 +1,9 @@
 # services/file_services/library_services/db_importer.py
 
 from sqlalchemy.orm import Session
-from app.models.artist import Artist
-from app.models.album import Album
-from app.models.track import Track
+from repositories.artist_repository import ArtistRepository
+from repositories.album_repository import AlbumRepository
+from repositories.track_repository import TrackRepository
 
 from core.logger import logger
 
@@ -38,12 +38,13 @@ class DBImporter:
         """
         try:
             # Gestion de l'artiste
-            artist = Artist.create(self.db, name=metadata["artist"])
+            artist_repo = ArtistRepository(self.db)
+            artist = artist_repo.create(name=metadata["artist"])
             logger.debug(f"DBImporter : Artiste traité: {artist.name} (ID {artist.id})")
 
             # Gestion de l'album
-            album = Album.create(
-                self.db,
+            album_repo = AlbumRepository(self.db)
+            album = album_repo.create(
                 title=metadata["album"],
                 artist_id=artist.id,
                 release_year=metadata.get("year")
@@ -51,8 +52,8 @@ class DBImporter:
             logger.debug(f"DBImporter : Album traité: {album.title} (ID {album.id})")
 
             # Création du track
-            Track.create(
-                self.db,
+            track_repo = TrackRepository(self.db)
+            track = track_repo.create(
                 title=metadata["title"],
                 file_path=metadata["file_path"],
                 artist_id=artist.id,
@@ -61,7 +62,7 @@ class DBImporter:
                 duration_seconds=metadata["duration"],
                 track_number=metadata["track_number"]
             )
-            logger.info(f"DBImporter : Track importé: {metadata['title']}")
+            logger.info(f"DBImporter : Track importé: {track.title}")
 
             # Commit après chaque track pour éviter la perte en cas d'erreur
             self.db.commit()
