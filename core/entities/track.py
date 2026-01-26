@@ -15,6 +15,7 @@ class Track:
     id: int
     counttrack: int
     title: str
+    file_path: str
     artist: Artist  
     album: Optional[Album]
     duration: int

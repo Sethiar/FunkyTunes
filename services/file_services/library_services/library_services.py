@@ -125,6 +125,7 @@ class LibraryServices:
                 id=t.id,
                 counttrack=i,
                 title=t.title,
+                file_path=t.file_path,
                 artist=t.artist.name,
                 album=t.album,
                 duration=t.duration_seconds or 0,
