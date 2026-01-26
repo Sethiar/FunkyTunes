@@ -16,8 +16,12 @@ class PlaylistRepository:
     # ========================= #
     #          CREATE           #
     # ========================= #
-    def create(self, name: str, description: Optional[str] = None) -> Playlist:
-        playlist = Playlist(name=name, description=description)
+    def create(self, name: str, user_id: int, description: Optional[str] = None) -> Playlist:
+        playlist = Playlist(
+            name=name, 
+            description=description,
+            user_id=user_id
+            )
         try:
             self.db.add(playlist)
             self.db.flush()

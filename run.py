@@ -26,7 +26,6 @@ from core.logger import logger
 
 from database.engine import SessionLocal
 from database.init_db import init_db
-from database.engine import get_session
 
 
 def main():
@@ -47,7 +46,6 @@ def main():
         # ========================= #
         logger.info("Initialisation de la base de données...")
         init_db()
-        session = get_session()
 
 
         # ============================== #

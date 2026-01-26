@@ -9,7 +9,7 @@ from app.UI.screens.home_screen import HomeScreen
 # Controllers
 from app.controllers.home_screen_controller import HomeScreenController
 from app.controllers.player_service_controller import PlayerServiceController
-from app.controllers.playlist_controller import PlaylistController
+from app.controllers.playlist_controllers.playlist_controller import PlaylistController
 from app.controllers.library_navigation_controller import LibraryNavigationController
 
 from app.presenter.library_presenter import LibraryPresenter
@@ -62,7 +62,7 @@ class AppManager:
 
         # PlayerServices Controller
         self.player_service_controller = PlayerServiceController(
-            self.home_screen.player_controls,
+            self.home_screen.top_bar.player_controls,
             self.player_service,
             self.playlist_service
         )
@@ -70,18 +70,18 @@ class AppManager:
         
         # Playlist Controller
         self.playlist_controller = PlaylistController(
-            ui=self.home_screen.playlist_panel, 
+            ui=self.home_screen.content_stack.playlist_panel, 
             playlist_service=self.playlist_service,
             player_service=self.player_service,
             session_factory=session_factory,
-            sort_tracks_widget=self.home_screen.sort_tracks  
+            sort_tracks_widget=self.home_screen.top_bar.sort_tracks  
         )
         logger.info("PlaylistController initialisé")
         
         
         # Presenter
         self.library_presenter = LibraryPresenter(
-            self.home_screen.library_display, 
+            self.home_screen.content_stack.library_display, 
             session_factory=session_factory
         )
         logger.info("LibraryPresenter initialisé")
@@ -89,7 +89,7 @@ class AppManager:
         
         # Playlist navigation Controller
         self.library_navigation_controller = LibraryNavigationController(
-            menu_library=self.home_screen.library_display.menu_library,
+            menu_library=self.home_screen.content_stack.library_display.menu_library,
             home_screen=self.home_screen,
             library_presenter=self.library_presenter 
         )

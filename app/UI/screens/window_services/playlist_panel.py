@@ -6,13 +6,14 @@ from typing import List, Optional
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QAbstractItemView
 )
+
 from PySide6.QtCore import Qt, Signal, QSortFilterProxyModel, QModelIndex
 
 from app.UI.atoms.buttons import AppButton
-from app.UI.molecules.menus.menu_playlist import PlaylistMenu
 from app.UI.atoms.library.library_display import TracksTableView
 from app.view_models.model_tracks import TracksTableModel
 
+from app.UI.screens.window_services.create_playlist_screen import CreateplaylistForm
 from core.entities.track import Track
 
 
@@ -29,6 +30,7 @@ class PlaylistPanel(QWidget):
     # =========================== #
     #           Signaux           #
     # =========================== #
+    request_new_playlist = Signal()
     request_back_to_library = Signal()
     request_reinitialized = Signal()
     track_selected = Signal(Track)
@@ -72,7 +74,7 @@ class PlaylistPanel(QWidget):
         # ========================= #
         #          Controls         #
         # ========================= #
-        self.playlist_menu= PlaylistMenu()
+        self.new_playlist = AppButton("Créer une nouvelle playlist")
         self.back_btn = AppButton("Retour à la bibliothèque")
         self.reset_view_btn = AppButton("Réinitialiser l’affichage")
         
@@ -131,6 +133,9 @@ class PlaylistPanel(QWidget):
         """
         # Section playlist
         self.main_layout.addWidget(QLabel("Pistes de la playlist"))
+        self.current_playlist_label = QLabel("Playlist : Aucune")
+        
+        self.main_layout.addWidget(self.current_playlist_label)
         
         
     def _build_controls(self):
@@ -140,10 +145,11 @@ class PlaylistPanel(QWidget):
             - retour à la bibliothèque
             - menu de gestion des playlists
         """
-        # Menu + bouton retour
+        # Nouvelle playlist + bouton retour
+        self.main_layout.addWidget(self.new_playlist)
         self.main_layout.addWidget(self.reset_view_btn)
         self.main_layout.addWidget(self.back_btn)
-        self.main_layout.addWidget(self.playlist_menu)
+        
 
     
     def _build_dynamic_container(self):
@@ -167,6 +173,9 @@ class PlaylistPanel(QWidget):
         Connecte les signaux Qt internes aux méthodes de la vue
         ou aux signaux exposés vers le controller.
         """
+
+        
+        self.new_playlist.clicked.connect(self.request_new_playlist.emit)
         self.back_btn.clicked.connect(self.request_back_to_library.emit)
         self.tracks_table_view.clicked.connect(self._on_track_clicked)
         self.reset_view_btn.clicked.connect(self.show_tracks_table)
@@ -187,6 +196,7 @@ class PlaylistPanel(QWidget):
         """
         self.tracks_model.set_tracks(tracks)
         self.show_tracks_table()
+    
     
     def show_tracks_table(self):
         """Affiche la table principale et cache la vue dynamique."""
@@ -260,4 +270,5 @@ class PlaylistPanel(QWidget):
         self.current_dynamic_view = widget
         self.current_dynamic_view.show()
         
+
         

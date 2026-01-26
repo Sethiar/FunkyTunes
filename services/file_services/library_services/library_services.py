@@ -1,12 +1,11 @@
 # services/file_services/library_services/library_services.py
 
 
-
+from typing import Callable, Iterator
 
 from app.application.import_track.file_importer import FileImporter
 from app.application.import_track.db_importer import DBImporter
 from app.application.import_track.import_result import ImportResult, ImportStatus
-
 
 from core.logger import logger
 
@@ -27,7 +26,7 @@ class LibraryServices:
         Initialise le service avec une session SQLAlchemy.
 
         Args:
-            db_session: session SQLAlchemy pour accéder aux tables Track, Album, Artist
+            session_factory: callable retournant un contexte SQLAlchemy
         """
         self.session_factory = session_factory
         self._cancelled = False
@@ -41,26 +40,32 @@ class LibraryServices:
         logger.info("LibraryServices : Import annulé demandé")
         self._cancelled = True
         
-
-    def import_from_directory(self, root_path: str, progress_callback=None) -> ImportResult:
+    
+    def _iter_files(self, root_path: str) -> Iterator[str]:
+        """Itérateur paresseux pour tous les fichiers audio du dossier."""
+        file_importer = FileImporter()
+        for file_path in file_importer.scan_directory(root_path):
+            yield file_path
+            
+            
+    def import_from_directory(
+        self, root_path: str, progress_callback: Callable[[int], None] = None
+    ) -> ImportResult:
         """
         Importation de tous les fichiers audio depuis un dossier donné.
 
         Args:
             root_path (str): dossier racine à scanner
-            progress_callback (Callable, optional): fonction appelée avec un entier % pour la progression
+            progress_callback (Callable[[int], None], optional): fonction appelée avec un entier % pour la progression
 
         Returns:
-            ImportResult : contient le statut (SUCCESS, PARTIAL, EMPTY), le nombre de fichiers importés et les erreurs éventuelles
+            ImportResult : contient le statut (SUCCESS, PARTIAL, EMPTY, FAILED),
+                           le nombre de fichiers importés et les erreurs éventuelles
         """
         self._cancelled = False
         logger.info(f"LibraryServices : Scan du dossier {root_path}")
 
-        file_importer = FileImporter(progress_callback)
-        with self.session_factory() as session:
-            db_importer = DBImporter(session)
-
-        files = file_importer.scan_directory(root_path)
+        files = list(self._iter_files(root_path))
         if not files:
             logger.info("LibraryServices : Aucun fichier trouvé")
             return ImportResult(status=ImportStatus.EMPTY)
@@ -69,36 +74,39 @@ class LibraryServices:
         errors = []
         total = len(files)
 
-        for i, file_path in enumerate(files, start=1):
-            if self._cancelled:
-                logger.info("LibraryServices : Import annulé en cours")
-                break
+        # On garde la session ouverte pendant toute la boucle
+        with self.session_factory() as session:
+            db_importer = DBImporter(session)
+            file_importer = FileImporter(progress_callback=None)  # callback géré ici
 
-            try:
-                # Extraction des métadonnées (titre, artiste, album, durée, etc.)
-                metadata = file_importer.extract_metadata(file_path)
-                # Import en BDD
-                db_importer.import_track(metadata)
-                imported += 1
-                
-                # Callback de progression
-                if progress_callback:
-                    percent = int((i / total) * 100)
-                    progress_callback(percent)
-            except Exception as e:
-                logger.exception(f"Erreur sur le fichier {file_path}")
-                errors.append((file_path, str(e)))
+            for i, file_path in enumerate(files, start=1):
+                if self._cancelled:
+                    logger.info("LibraryServices : Import annulé en cours")
+                    break
+
+                try:
+                    metadata = file_importer.extract_metadata(file_path)
+                    db_importer.import_track(metadata)
+                    imported += 1
+                    # Callback thread-safe
+                    if progress_callback:
+                        percent = int((i / total) * 100)
+                        progress_callback(percent)
+                except Exception as e:
+                    logger.exception(f"Erreur sur le fichier {file_path}")
+                    errors.append((file_path, str(e)))
 
         # Déterminer le statut final
-        if errors and imported:
+        if imported == 0 and errors:
+            status = ImportStatus.FAILED
+        elif imported > 0 and errors:
             status = ImportStatus.PARTIAL
-        elif not errors:
+        elif imported > 0 and not errors:
             status = ImportStatus.SUCCESS
         else:
             status = ImportStatus.EMPTY
 
         logger.info(f"LibraryServices : Import terminé ({status.name}), {imported}/{total} fichiers importés")
         return ImportResult(status=status, imported=imported, errors=errors)
-
-
+    
     

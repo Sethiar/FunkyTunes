@@ -1,5 +1,7 @@
 # app/controller/player_service_controller.py
 
+from enum import Enum
+from typing import Optional
 
 from PySide6.QtCore import QObject
 
@@ -10,15 +12,20 @@ from services.file_services.playlist_services.playlist_services import PlaylistS
 from core.logger import logger
 
 
+
+class PlaybackState(Enum):
+    PLAYING = "playing"
+    PAUSED = "paused"
+    STOPPED = "stopped"
+
+
 class PlayerServiceController(QObject):
     """
-    Controller qui relie l'interface PlayerControls à PlayerServices et PlaylistServices.
+    Controller reliant l'UI PlayerControls aux services Player et Playlist.
 
     Responsabilités :
-    - Relier les actions de l'UI aux services audio et playlist
-    - Suivre les changements d'état et mettre à jour l'UI
-    - Ne fait pas de lecture directe ou de gestion de fichiers
-    
+    - Relier actions UI → services audio/playlist
+    - Mettre à jour l'UI en fonction des événements services
     """
     
     def __init__(
@@ -26,7 +33,7 @@ class PlayerServiceController(QObject):
         controls: PlayerControls, 
         player_service: PlayerServices,
         playlist_service: PlaylistServices
-    ):
+    ) -> None:
         """
         Initialise le controller.
 
@@ -41,10 +48,10 @@ class PlayerServiceController(QObject):
         self.player = player_service
         self.playlist = playlist_service
        
-        # Lier l'UI aux méthodes du controller
+        # Binding UI ↔ Controller
         self._bind_ui_to_controller()
         
-        # Lier les signaux des services aux méthodes de mise à jour
+        # Binding Services ↔ Controller
         self._bind_services_to_controller()
 
         logger.info("PlayerServiceController initialisé")
@@ -70,7 +77,7 @@ class PlayerServiceController(QObject):
     # ========================= #
     # Services → Controller     #
     # ========================= #
-    def _bind_services_to_controller(self):
+    def _bind_services_to_controller(self) -> None:
         """Connecte les signaux des services aux slots du controller."""
         self.playlist.track_changed.connect(self._on_track_changed)
         self.player.playback_state_changed.connect(self._on_playback_state_changed)
@@ -88,18 +95,22 @@ class PlayerServiceController(QObject):
             return
         self.player.handle_play(track)
         
-        
+    # Navigation dans la playlist
     def _on_next(self):
         """Passe à la piste suivante et la joue."""
-        track = self.playlist.next()
+        track = self.playlist.get_next_track()
         if track:
             self.player.handle_play(track)
-
+        else:
+            logger.info("Fin de la playlist ou aucune piste suivante")
+            
     def _on_previous(self):
         """Retourne à la piste précédente et la joue."""
-        track = self.playlist.previous()
+        track = self.playlist.get_previous_track()
         if track:
-            self.player.handle_play(track)   
+            self.player.handle_play(track)
+        else:
+            logger.info("Début de la playlist ou aucune piste précédente")
     
     
     # ========================= #
@@ -113,8 +124,7 @@ class PlayerServiceController(QObject):
             track_path (str) : chemin de la nouvelle piste
         """
         logger.info(f"Track changée : {track_path}")
-        # Ici, tu peux mettre à jour un label ou la jaquette si tu veux
-        # Ex: self.controls.track_label.setText(os.path.basename(file_path))
+        self._update_controls_ui(track=self.playlist.current_track)
 
 
     def _on_playback_state_changed(self, state: str):
@@ -125,7 +135,7 @@ class PlayerServiceController(QObject):
             state (str) : 'playing', 'paused', 'stopped'
         """
         logger.info(f"État lecture : {state}")
-        # Ici, tu peux changer l'icône Play/Pause selon state
+        self._update_controls_ui(state=PlaybackState(state))
 
 
     def _on_volume_changed(self, volume: float):
@@ -136,7 +146,24 @@ class PlayerServiceController(QObject):
             volume (float) : volume entre 0.0 et 1.0
         """
         logger.info(f"Volume changé : {volume*100:.0f}%")
-        # Ici, tu peux mettre à jour un slider ou un label volume
+        self._update_controls_ui(volume=volume)
         
         
+    # ========================= #
+    #   Mise à jour UI centralisée
+    # ========================= #
+    def _update_controls_ui(
+        self,
+        track=None,
+        state: Optional[PlaybackState] = None,
+        volume: Optional[float] = None
+    ) -> None:
+        """Met à jour tous les widgets UI en fonction des signaux reçus."""
+        if track:
+            self.controls.track_label.setText(track.title)
+        if state:
+            self.controls.update_play_pause_icon(state)
+        if volume is not None:
+            self.controls.volume_slider.setValue(int(volume * 100))   
             
+                 

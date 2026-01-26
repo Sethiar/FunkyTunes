@@ -1,16 +1,17 @@
 # services/file_services/playlist_services/playlist_services.py
 
 
-from uuid import uuid4
+from typing import List
 from PySide6.QtCore import QObject, Signal
 
-from core.entities.playlist import Playlist
+from core.entities.playlist import Playlist as PlaylistEntity
 from core.logger import logger
 
     
 class PlaylistServices(QObject):
     """
-    Service pour gérer toutes les playlists, y compris la bibliothèque.
+    Service pour gérer les playlists en mémoire (entités métier),
+    séparées de la base de données.
 
     Rôle :
         - Charger et gérer la bibliothèque musicale
@@ -31,40 +32,46 @@ class PlaylistServices(QObject):
     def __init__(self):
         """Initialise le service avec un dictionnaire de playlists vide."""
         super().__init__()
-        self._playlists: dict[str, Playlist] = {}
+        self._playlists: dict[str, PlaylistEntity] = {}
         self._current_playlist_id: str | None = None
-        
+    
         
     # =============================== #
     #  Chargement de la bibliothèque  #
     # =============================== #
-    def load_library_tracks(self, tracks: list[str]):
+    def load_library_tracks(self, tracks_path: List[str]):
         """
         Charge toutes les pistes de la bibliothèque dans une playlist interne "Bibliothèque".
 
         Args:
-            tracks (list[str]): liste de chemins de fichiers audio
+            tracks_path (list[str]): liste de chemins de fichiers audio
         """
         library_id = "library"
-        self._playlists[library_id] = Playlist(
+        
+        # Création d'une entité PlaylistEntity pour la bibliothèque
+        self._playlists[library_id] = PlaylistEntity(
+            id=-1,
             name="Bibliothèque",
-            tracks=tracks.copy(),
-            current_index=0 if tracks else None
+            
+            track_ids=[],
+            tracks_path=tracks_path.copy() if tracks_path else [],
+            
+            current_index=0,
+            user_id = None,
         )
-
-        # Définir comme playlist active
+        
         self._current_playlist_id = library_id
 
         # Signaux
         self.playlist_changed.emit()
-        if tracks:
+        if tracks_path:
             self.track_changed.emit(self.current_track)  
         
         
     # ============================= #
     #    Gestion des playlists      #
     # ============================= #
-    def create_playlist(self, name: str) -> str:
+    def create_playlist(self, name: str, tracks_path) -> str:
         """
         Crée une nouvelle playlist vide et la définit comme playlist courante.
 
@@ -74,8 +81,17 @@ class PlaylistServices(QObject):
         Returns:
             str: identifiant unique de la playlist créée
         """
-        playlist_id = str(uuid4())
-        self._playlists[playlist_id] = Playlist(name=name, tracks=[])
+        playlist_id = f"playlist_{len(self._playlists)+1}" 
+        
+        playlist_id = "library"
+        self._playlists[playlist_id] = PlaylistEntity(
+            id=-1,
+            name=name,
+            track_ids=[],
+            tracks_path=[],
+            current_index=0,
+            user_id=None
+        )
         self._current_playlist_id = playlist_id
 
         # Signaux
@@ -120,105 +136,68 @@ class PlaylistServices(QObject):
         if playlist and playlist.tracks:
             playlist.current_index = 0
             self.track_changed.emit(self.current_track)
+            
+            
+    def get_current_track(self):
+        return self.current_track
 
+
+    def get_next_track(self):
+        playlist = self.current_playlist
+        if playlist and playlist.current_index + 1 < len(playlist.tracks_path):
+            playlist.current_index += 1
+            track = playlist.tracks_path[playlist.current_index]
+            self.track_changed.emit(track)
+            return track
+        return None
+
+
+    def get_previous_track(self):
+        playlist = self.current_playlist
+        if playlist and playlist.current_index - 1 >= 0:
+            playlist.current_index -= 1
+            track = playlist.tracks_path[playlist.current_index]
+            self.track_changed.emit(track)
+            return track
+        return None
+                
 
     # ============================ #
     #     Gestion des tracks       #
     # ============================ #
-    def add_track(self, track_path: str):
-        """
-        Ajoute une piste à la playlist courante.
-
-        Args:
-            track_path (str): chemin du fichier audio
-        """
-        playlist = self.current_playlist
+    def add_track_to_playlist(self, playlist_id: str, track_id: int):
+        playlist = self._playlists.get(playlist_id)
         if not playlist:
-            return
-        playlist.tracks.append(track_path)
-        self.playlist_changed.emit()
+            raise ValueError(f"Playlist {playlist_id} inexistante")
+        if track_id not in playlist.track_ids:
+            playlist.track_ids.append(track_id)
+            self.playlist_changed.emit()
 
 
-    def remove_track(self, track_path: str):
-        """
-        Supprime une piste de la playlist courante.
-
-        Args:
-            track_path (str): chemin du fichier à supprimer
-        """
-        playlist = self.current_playlist
-        if not playlist or track_path not in playlist.tracks:
-            return
-
-        index = playlist.tracks.index(track_path)
-        playlist.tracks.remove(track_path)
-
-        # Ajuster l'index si nécessaire
-        if playlist.current_index == index:
-            playlist.current_index = 0 if playlist.tracks else None
-            self.track_changed.emit(self.current_track)
-
-        self.playlist_changed.emit()
+    def remove_track_from_playlist(self, playlist_id: str, track_id: int):
+        playlist = self._playlists.get(playlist_id)
+        if not playlist:
+            raise ValueError(f"Playlist {playlist_id} inexistante")
+        if track_id in playlist.track_ids:
+            playlist.track_ids.remove(track_id)
+            self.playlist_changed.emit()
 
 
     # ========================= #
-    #         Navigation        #
+    #       Accesseurs          #
     # ========================= #
-    def next(self) -> str | None:
-        """
-        Passe à la piste suivante de la playlist courante.
-
-        Returns:
-            str | None: chemin de la piste suivante ou None si aucune piste
-        """
-        playlist = self.current_playlist
-        if not playlist or not playlist.tracks:
-            return None
-
-        playlist.current_index = (playlist.current_index + 1) % len(playlist.tracks)
-        self.track_changed.emit(self.current_track)
-        return self.current_track
-
-
-    def previous(self) -> str | None:
-        """
-        Passe à la piste précédente de la playlist courante.
-
-        Returns:
-            str | None: chemin de la piste précédente ou None si aucune piste
-        """
-        playlist = self.current_playlist
-        if not playlist or not playlist.tracks:
-            return None
-
-        playlist.current_index = (playlist.current_index - 1) % len(playlist.tracks)
-        self.track_changed.emit(self.current_track)
-        return self.current_track
-
-
-    # ======================== #
-    #        Propriétés        #
-    # ======================== #
     @property
-    def current_playlist(self) -> Playlist | None:
-        """Retourne la playlist courante ou None si aucune sélection."""
-        if not self._current_playlist_id:
-            return None
-        return self._playlists.get(self._current_playlist_id)
-
+    def current_playlist(self) -> PlaylistEntity | None:
+        if self._current_playlist_id:
+            return self._playlists.get(self._current_playlist_id)
+        return None
 
     @property
     def current_track(self) -> str | None:
-        """
-        Retourne la piste courante de la playlist.
-
-        Returns:
-            str | None: chemin du fichier audio ou None si aucune piste
-        """
         playlist = self.current_playlist
-        if not playlist or playlist.current_index is None:
-            logger.warning("PlaylistServices.current_track : aucune piste disponible")
-            return None
-        return playlist.tracks[playlist.current_index]
+        if playlist and playlist.tracks_path and playlist.current_index is not None:
+            if 0 <= playlist.current_index < len(playlist.tracks_path):
+                return playlist.tracks_path[playlist.current_index]
+        return None
     
     

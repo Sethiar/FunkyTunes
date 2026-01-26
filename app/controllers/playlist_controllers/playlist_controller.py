@@ -6,7 +6,9 @@ from typing import Optional, List
 from PySide6.QtCore import Qt, QObject
 
 from app.UI.screens.window_services.playlist_panel import PlaylistPanel
+
 from app.controllers.tracks_sort_controller import TracksBySortController
+
 from services.file_services.player_services.player_services import PlayerServices
 from services.file_services.playlist_services.playlist_services import PlaylistServices
 from services.file_services.library_services.track_read_service import TrackReadService
@@ -47,7 +49,6 @@ class PlaylistController(QObject):
         self._bind_sort_buttons(sort_tracks_widget)
 
         # Lier UI et services
-        self._bind_ui()
         self._bind_service()
 
         # Charger la bibliothèque et la playlist au démarrage
@@ -59,17 +60,6 @@ class PlaylistController(QObject):
         """Instancie un TrackReadService avec une session SQLAlchemy locale."""
         session = self.session_factory()
         return TrackReadService(session)
-
-
-    # ========================= #
-    #      UI → Controller      #
-    # ========================= #
-    def _bind_ui(self) -> None:
-        """Connecte les signaux de l'UI aux méthodes du controller."""
-        self.ui.playlist_menu.request_create_playlist.connect(self._create_playlist)
-        self.ui.playlist_menu.request_delete_playlist.connect(self._delete_playlist)
-        self.ui.playlist_menu.request_add_track.connect(self._add_track)
-        self.ui.playlist_menu.request_remove_track.connect(self._remove_track)
 
 
     # ========================= #
@@ -106,9 +96,10 @@ class PlaylistController(QObject):
     # ========================= #
     #   Actions utilisateur     #
     # ========================= #
-    def _create_playlist(self) -> None:
-        """Créer une nouvelle playlist."""
-        self.playlist.create_playlist("Nouvelle playlist")
+    def _create_playlist(self):
+        """Créer une nouvelle playlist via un dialogue et la BDD."""
+        pass
+
 
     def _delete_playlist(self) -> None:
         """Supprime la playlist courante."""
@@ -183,5 +174,6 @@ class PlaylistController(QObject):
                 self.ui.tracks_table_view.selectRow(row)
                 self.ui.tracks_table_view.scrollTo(index)
                 break
-            
-            
+
+        
+                
