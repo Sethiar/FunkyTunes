@@ -1,15 +1,12 @@
 # services/file_services/library_services/library_services.py
 
 
-from typing import Callable, List, Tuple
 
-from sqlalchemy.orm import joinedload
 
-from services.file_services.library_services.file_importer import FileImporter
-from services.file_services.library_services.db_importer import DBImporter
-from services.file_services.library_services.import_result import ImportResult, ImportStatus
-from core.entities.track import Track as TrackDataClass
-from app.models.track import Track as TrackORM
+from app.application.import_track.file_importer import FileImporter
+from app.application.import_track.db_importer import DBImporter
+from app.application.import_track.import_result import ImportResult, ImportStatus
+
 
 from core.logger import logger
 
@@ -25,14 +22,14 @@ class LibraryServices:
         - Fournir les pistes pour l'affichage ou le player
     """
 
-    def __init__(self, db_session):
+    def __init__(self, session_factory):
         """
         Initialise le service avec une session SQLAlchemy.
 
         Args:
             db_session: session SQLAlchemy pour accéder aux tables Track, Album, Artist
         """
-        self.db = db_session
+        self.session_factory = session_factory
         self._cancelled = False
         
     
@@ -60,7 +57,8 @@ class LibraryServices:
         logger.info(f"LibraryServices : Scan du dossier {root_path}")
 
         file_importer = FileImporter(progress_callback)
-        db_importer = DBImporter(self.db)
+        with self.session_factory() as session:
+            db_importer = DBImporter(session)
 
         files = file_importer.scan_directory(root_path)
         if not files:
@@ -103,52 +101,4 @@ class LibraryServices:
         return ImportResult(status=status, imported=imported, errors=errors)
 
 
-    # ========================== #
-    #       Accès aux pistes      #
-    # ========================== #
-    def get_tracks(self) -> List[TrackDataClass]:
-        """
-        Retourne toutes les pistes sous forme de dataclasses pour affichage UI.
-
-        Returns:
-            List[TrackDataClass]: liste des pistes avec titre, artiste, album, durée, année
-        """
-        orm_tracks = (
-            self.db.query(TrackORM)
-            .options(joinedload(TrackORM.artist), joinedload(TrackORM.album))
-            .order_by(TrackORM.album_id, TrackORM.track_number)
-            .all()
-        )
-
-        tracks = [
-            TrackDataClass(
-                id=t.id,
-                counttrack=i,
-                title=t.title,
-                file_path=t.file_path,
-                artist=t.artist.name,
-                album=t.album,
-                duration=t.duration_seconds or 0,
-                year=getattr(t.album, "year", "Indisponible")
-            )
-            for i, t in enumerate(orm_tracks, start=1)
-        ]
-
-        logger.info(f"LibraryServices : {len(tracks)} tracks chargées depuis la BDD")
-        return tracks
-    
-    
-    def get_track_file_paths(self) -> list[str]:
-        """
-        Retourne la liste des chemins complets pour le PlayerServices.
-
-        Returns:
-            list[str]: chemins des fichiers audio
-        """
-        orm_tracks = self.db.query(TrackORM).order_by(TrackORM.album_id, TrackORM.track_number).all()
-        paths = [t.file_path for t in orm_tracks]
-
-        logger.info(f"LibraryServices : {len(paths)} tracks pour le PlayerServices")
-        return paths
-    
     

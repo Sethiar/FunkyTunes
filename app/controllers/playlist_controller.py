@@ -9,7 +9,7 @@ from app.UI.screens.window_services.playlist_panel import PlaylistPanel
 from app.controllers.tracks_sort_controller import TracksBySortController
 from services.file_services.player_services.player_services import PlayerServices
 from services.file_services.playlist_services.playlist_services import PlaylistServices
-from services.file_services.library_services.library_services import LibraryServices
+from services.file_services.library_services.track_read_service import TrackReadService
 
 from core.logger import logger
 from core.entities.track import Track
@@ -32,7 +32,7 @@ class PlaylistController(QObject):
         ui: PlaylistPanel,
         playlist_service: PlaylistServices,
         player_service: PlayerServices,
-        library_service: LibraryServices,
+        session_factory: callable,
         sort_tracks_widget
     ):
         super().__init__()
@@ -40,10 +40,10 @@ class PlaylistController(QObject):
         self.ui: PlaylistPanel = ui
         self.playlist: PlaylistServices = playlist_service
         self.player: PlayerServices = player_service
-        self.library_service: LibraryServices = library_service
+        self.session_factory = session_factory
         
         # Instanciation du controller de tri
-        self.sort_controller = TracksBySortController(self.ui, self.library_service)
+        self.sort_controller = TracksBySortController(self.ui, self._get_track_read_service)
         self._bind_sort_buttons(sort_tracks_widget)
 
         # Lier UI et services
@@ -53,6 +53,12 @@ class PlaylistController(QObject):
         # Charger la bibliothèque et la playlist au démarrage
         self.init_library()
         self.show_library_tracks()
+        
+        
+    def _get_track_read_service(self) -> TrackReadService:
+        """Instancie un TrackReadService avec une session SQLAlchemy locale."""
+        session = self.session_factory()
+        return TrackReadService(session)
 
 
     # ========================= #
@@ -83,7 +89,8 @@ class PlaylistController(QObject):
         Charge la bibliothèque depuis LibraryServices dans PlaylistServices
         et prépare la lecture du premier titre.
         """
-        tracks_paths = self.library_service.get_track_file_paths()
+        track_read_service = self._get_track_read_service()
+        tracks_paths = track_read_service.get_track_file_paths()
         if not tracks_paths:
             logger.warning("Aucune piste trouvée dans la bibliothèque")
             return
@@ -93,14 +100,7 @@ class PlaylistController(QObject):
         # Préparer la lecture du premier titre si disponible
         first_track = self.playlist.current_track
         if first_track:
-            self.player.prepare(first_track)
-            
-            
-    def _bind_sort_buttons(self, sort_widget):
-        sort_widget.sort_by_artist.connect(self.sort_controller.show_by_artist)
-        sort_widget.sort_by_album.connect(self.sort_controller.show_by_album)
-        sort_widget.sort_by_genre.connect(self.sort_controller.show_by_genre)
-        sort_widget.sort_by_favorites.connect(self.sort_controller.show_favorites)        
+            self.player.prepare(first_track)    
     
     
     # ========================= #
@@ -130,6 +130,14 @@ class PlaylistController(QObject):
             track_path (str): chemin de la piste à lire
         """
         self.player.handle_play(track_path)
+        
+        
+    def _bind_sort_buttons(self, sort_widget):
+        self.sort_controller = TracksBySortController(self.ui, self._get_track_read_service())
+        sort_widget.sort_by_artist.connect(self.sort_controller.show_by_artist)
+        sort_widget.sort_by_album.connect(self.sort_controller.show_by_album)
+        sort_widget.sort_by_genre.connect(self.sort_controller.show_by_genre)
+        sort_widget.sort_by_favorites.connect(self.sort_controller.show_favorites)        
 
 
     # ========================= #
@@ -143,7 +151,8 @@ class PlaylistController(QObject):
             tracks (Optional[List[Track]]): si None, charge toutes les tracks de LibraryServices
         """
         if tracks is None:
-            tracks = self.library_service.get_tracks()
+            track_read_service = self._get_track_read_service()
+            tracks = track_read_service.get_tracks()
         self.ui.display_tracks(tracks)
 
 

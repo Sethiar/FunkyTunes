@@ -33,6 +33,7 @@ class AppManager:
     """
     
     def __init__(self, session_factory: Callable[[], "Session"]) -> None:
+        logger.info("AppManager : Initialisation des composants...")
         """
         Initialise tous les composants de l'application.
 
@@ -46,8 +47,9 @@ class AppManager:
         logger.info("HomeScreen initialisé")
         
         # Services Bibliothèque
-        self.library_service = LibraryServices(session_factory())
+        self.library_service = LibraryServices(session_factory)
         logger.info("LibraryServices initialisé")
+        
         
         # Service Playlist
         self.playlist_service = PlaylistServices()
@@ -71,27 +73,30 @@ class AppManager:
             ui=self.home_screen.playlist_panel, 
             playlist_service=self.playlist_service,
             player_service=self.player_service,
-            library_service=self.library_service,
+            session_factory=session_factory,
             sort_tracks_widget=self.home_screen.sort_tracks  
         )
         logger.info("PlaylistController initialisé")
+        
+        
+        # Presenter
+        self.library_presenter = LibraryPresenter(
+            self.home_screen.library_display, 
+            session_factory=session_factory
+        )
+        logger.info("LibraryPresenter initialisé")
         
         
         # Playlist navigation Controller
         self.library_navigation_controller = LibraryNavigationController(
             menu_library=self.home_screen.library_display.menu_library,
             home_screen=self.home_screen,
-            library_service=self.library_service
+            library_presenter=self.library_presenter 
         )
         logger.info("LibraryNavigator initialisé")
         
         
-        # Presenter
-        self.library_presenter = LibraryPresenter(
-            self.home_screen.library_display, 
-            session_factory
-        )
-        logger.info("LibraryPresenter initialisé")
+        
         
         # Controllers
         self.home_controller = HomeScreenController(

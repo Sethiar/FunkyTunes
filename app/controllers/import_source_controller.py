@@ -5,7 +5,7 @@ from typing import Optional
 from PySide6.QtWidgets import QFileDialog
 
 from services.file_services.library_services.library_services import LibraryServices
-from services.file_services.library_services.import_worker import ImportWorker
+from app.application.import_track.import_worker import ImportWorker
 
 from core.logger import logger
 

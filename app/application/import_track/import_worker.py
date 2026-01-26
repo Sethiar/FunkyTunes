@@ -3,7 +3,7 @@
 
 from PySide6.QtCore import QThread, Signal
 from services.file_services.library_services.library_services import LibraryServices
-from services.file_services.library_services.import_result import ImportResult
+from app.application.import_track.import_result import ImportResult
 
 from core.logger import logger
 

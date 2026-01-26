@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, Signal
 
 from app.UI.molecules.import_icons import ImportSourceBar
 from app.UI.organisms.progress_bar_complete import ProgressBarComplete
-from services.file_services.library_services.import_result import ImportStatus
+from app.application.import_track.import_result import ImportStatus
 
 
 class ImportSourceDialog(QDialog):
