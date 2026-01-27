@@ -1,10 +1,9 @@
 # app/repositories/tack_repository.py
 
 from typing import List, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import IntegrityError
 from app.models.track import Track, playlist_track_association
-from app.models.playlist import Playlist
 
 
 
@@ -53,8 +52,14 @@ class TrackRepository:
         return self.db.query(Track).filter_by(title=title).first()
 
 
-    def get_all(self, skip: int = 0, limit: int = 100) -> List[Track]:
-        return self.db.query(Track).offset(skip).limit(limit).all()
+    def get_all(self, skip=0, limit=100):
+        return (
+            self.db.query(Track)
+            .options(selectinload(Track.artist))
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
 
     def get_by_artist(self, artist_id: int, skip: int = 0, limit: int = 100) -> List[Track]:

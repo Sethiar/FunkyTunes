@@ -6,19 +6,22 @@ from sqlalchemy.orm import Session
 
 from app.UI.screens.home_screen import HomeScreen
 from app.UI.window_manager import WindowManager
+
 # Controllers
 from app.controllers.home_screen_controller import HomeScreenController
 from app.controllers.player_service_controller import PlayerServiceController
 from app.controllers.playlist_controllers.playlist_controller import PlaylistController
+from app.controllers.playlist_controllers.playlist_maker_controller import PlaylistMakerController
 from app.controllers.library_navigation_controller import LibraryNavigationController
 
 from app.presenter.library_presenter import LibraryPresenter
+
 
 # Services
 from services.file_services.library_services.library_services import LibraryServices
 from services.file_services.player_services.player_services import PlayerServices
 from services.file_services.playlist_services.playlist_services import PlaylistServices
-
+from services.file_services.playlist_services.playlist_maker_services import PlaylistMakerServices
 
 from core.logger import logger
 
@@ -72,6 +75,7 @@ class AppManager:
         )
         logger.info("PlayerServicesController initialisé")
         
+        
         # Playlist Controller
         self.playlist_controller = PlaylistController(
             ui=self.home_screen.content_stack.playlist_panel, 
@@ -82,6 +86,20 @@ class AppManager:
         )
         logger.info("PlaylistController initialisé")
         
+        
+        # PlaylistMaker Controller
+        self.playlist_maker_service = PlaylistMakerServices(session_factory)
+        self.playlist_maker_controller =  PlaylistMakerController(
+            ui=self.home_screen.content_stack.playlist_panel.create_playlist_form, 
+            playlist_maker_service=self.playlist_maker_service
+        )
+        self.home_screen.content_stack.playlist_panel.request_new_playlist.connect(
+            self.playlist_maker_controller.open_form
+        )
+        self.playlist_maker_controller.playlist_created.connect(
+            self.home_screen.content_stack.playlist_panel.add_playlist_to_list
+        )
+        logger.info("PlaylistMakerController initialisé")
         
         # Presenter
         self.library_presenter = LibraryPresenter(
