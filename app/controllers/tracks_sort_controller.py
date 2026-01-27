@@ -87,7 +87,6 @@ class TracksBySortController(QObject):
         self.ui.replace_main_view("artists", artist_view)
         
         
-        
     # =========================== #
     #    Affichage par genre      #
     # =========================== #

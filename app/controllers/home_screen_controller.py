@@ -1,7 +1,6 @@
 # app/controllers/homescreen_controller.py
 
-
-from typing import Optional, List
+from typing import Optional
 
 from app.UI.screens.window_services.import_source_dialog import ImportSourceDialog
 from app.controllers.import_source_controller import ImportSourceController
@@ -19,7 +18,7 @@ class HomeScreenController:
         - ouverture des paramètres et de l'aide
     """
     
-    def __init__(self, home_screen, library_service, player_service, library_presenter) -> None:
+    def __init__(self, home_screen, library_service, player_service, library_presenter, window_manager) -> None:
         """
         Initialise le contrôleur du HomeScreen.
 
@@ -34,10 +33,13 @@ class HomeScreenController:
         self._library_service = library_service
         self._player_service = player_service
         self._library_presenter = library_presenter
+        self._window_manager = window_manager
         
+        # Fenêtres secondaires / controllers
         # Fenêtres secondaires / controllers
         self._import_dialog: Optional[ImportSourceDialog] = None
         self._import_controller: Optional[ImportSourceController] = None
+
         logger.info("HomeScreenController : initialisation complète")
         
         # Connexion des signaux
@@ -58,28 +60,29 @@ class HomeScreenController:
     # ============================= #
     
     def import_music(self):
-        """
-        Ouvre la fenêtre de sélection du support d'import musical
-        et instancie le controller associé.
-        """
+        """Ouvre la fenêtre d'import musical (une seule instance)."""
+        
+        # Si la fenêtre existe déjà, on la met au premier plan
         if self._import_dialog and self._import_dialog.isVisible():
-            logger.info("ImportScreen déjà ouverte, focus dessus")
+            logger.info("Import dialog déjà ouvert, focus dessus")
             self._import_dialog.raise_()
             self._import_dialog.activateWindow()
             return
         
-        logger.info("Ouverture de la fenêtre d'import musical")
-        # Création de l'écran de sélection du type d'import
-        self._import_dialog = ImportSourceDialog(parent=self._view)
-        # Création des services d'import de la bibliothèque
-        self._import_controller = ImportSourceController(
-            dialog=self._import_dialog,
-            library_service=self._library_service,
-            presenter=self._library_presenter
-        )
+        # Création de la fenêtre + controller   
+        def factory():
+            logger.info("Création du dialog ImportSourceDialog")
+            dialog = ImportSourceDialog(parent=None)
+            self._import_controller = ImportSourceController(
+                dialog=dialog,
+                library_service=self._library_service,
+                presenter=self._library_presenter
+            )
+            return dialog
         
-        # Affichage de l'écran d'import
-        self._import_dialog.show()
+        # Ouvre la fenêtre de façon unique via WindowManager
+        self._import_dialog = self._window_manager.open_unique("import_music", factory)
+        logger.info(f"Dialog visible: {self._import_dialog.isVisible()}")
         
     
     def export_music(self, export_list):
@@ -89,8 +92,7 @@ class HomeScreenController:
         Args:
             export_list: Liste de pistes à exporter (peut être None).
         """
-        if export_list == None:
-            print("Aucune liste préétablie")
+        logger.warning("Export demandé sans liste de pistes")
     
     
     def open_settings(self):

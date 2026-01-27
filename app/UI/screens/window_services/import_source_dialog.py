@@ -8,6 +8,7 @@ from app.UI.molecules.import_icons import ImportSourceBar
 from app.UI.organisms.progress_bar_complete import ProgressBarComplete
 from app.application.import_track.import_result import ImportStatus
 
+from core.logger import logger
 
 class ImportSourceDialog(QDialog):
     """
@@ -68,7 +69,7 @@ class ImportSourceDialog(QDialog):
         self.import_bar.import_request_folder.connect(self.request_import_folder.emit)
         self.import_bar.import_request_cd.connect(self.request_import_cd.emit) 
         self.import_bar.import_request_usb.connect(self.request_import_usb.emit)
-    
+        logger.info("Signaux du import source dialog connectés.")
     
     # ================================ #
     #    Méthodes pour le controller   #

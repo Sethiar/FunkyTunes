@@ -16,8 +16,17 @@ class PlaylistMakerController(QObject):
     def __init__(
         self, 
         ui: CreateplaylistForm,
-        session_factory: Callable):
-        super().__init__(parent)
         
-        se
+        session_factory: Callable
+        
+        ):
+        
+        
+        
+        super().__init__()
+        
+        self.ui: CreateplaylistForm = ui
+        self.session_factory = session_factory
+        
+        
     

@@ -12,7 +12,6 @@ from services.file_services.playlist_services.playlist_services import PlaylistS
 from core.logger import logger
 
 
-
 class PlaybackState(Enum):
     PLAYING = "playing"
     PAUSED = "paused"
@@ -21,19 +20,17 @@ class PlaybackState(Enum):
 
 class PlayerServiceController(QObject):
     """
-    Controller reliant l'UI PlayerControls aux services Player et Playlist.
-
-    Responsabilités :
-    - Relier actions UI → services audio/playlist
-    - Mettre à jour l'UI en fonction des événements services
+    Controller minimal reliant PlayerControls aux services Player et Playlist.
+    Délègue toute logique métier aux services.
     """
     
     def __init__(
         self, 
         controls: PlayerControls, 
         player_service: PlayerServices,
-        playlist_service: PlaylistServices
-    ) -> None:
+        playlist_service: PlaylistServices, 
+        parent=None
+    ):
         """
         Initialise le controller.
 
@@ -43,24 +40,23 @@ class PlayerServiceController(QObject):
             playlist_service (PlaylistServices) : service gestion playlist
         """
         
-        super().__init__()
+        super().__init__(parent)
         self.controls = controls
         self.player = player_service
         self.playlist = playlist_service
        
-        # Binding UI ↔ Controller
-        self._bind_ui_to_controller()
-        
-        # Binding Services ↔ Controller
-        self._bind_services_to_controller()
+        # Connecte UI → controller → services
+        self._bind_ui()
+        # Connecte services → controller → UI
+        self._bind_services()
 
         logger.info("PlayerServiceController initialisé")
         
         
     # ========================= #
-    #      UI → Controller      #
+    #      UI → services        #
     # ========================= #
-    def _bind_ui_to_controller(self):
+    def _bind_ui(self):
         """Connecte les signaux UI aux actions du player et de la playlist."""
         self.controls.request_play.connect(self._on_play)
         self.controls.request_pause.connect(self.player.handle_pause)
@@ -75,9 +71,9 @@ class PlayerServiceController(QObject):
         
         
     # ========================= #
-    # Services → Controller     #
+    #      Services → UI        #
     # ========================= #
-    def _bind_services_to_controller(self) -> None:
+    def _bind_services(self) -> None:
         """Connecte les signaux des services aux slots du controller."""
         self.playlist.track_changed.connect(self._on_track_changed)
         self.player.playback_state_changed.connect(self._on_playback_state_changed)
@@ -90,10 +86,10 @@ class PlayerServiceController(QObject):
     def _on_play(self):
         """Lit la piste courante dans la playlist."""
         track = self.playlist.current_track
-        if not track:
+        if track:
+            self.player.handle_play(track)
+        else:
             logger.warning("Aucune piste à lire")
-            return
-        self.player.handle_play(track)
         
     # Navigation dans la playlist
     def _on_next(self):
@@ -102,7 +98,7 @@ class PlayerServiceController(QObject):
         if track:
             self.player.handle_play(track)
         else:
-            logger.info("Fin de la playlist ou aucune piste suivante")
+            logger.info("Fin de playlist")
             
     def _on_previous(self):
         """Retourne à la piste précédente et la joue."""
@@ -110,60 +106,35 @@ class PlayerServiceController(QObject):
         if track:
             self.player.handle_play(track)
         else:
-            logger.info("Début de la playlist ou aucune piste précédente")
+            logger.info("Début de playlist")
     
     
     # ========================= #
-    # Retours services          #
-    # ========================= #    
+    # Services → UI slots        #
+    # ========================= #
     def _on_track_changed(self, track_path: str):
-        """
-        Slot appelé quand la piste change dans PlaylistServices.
-
-        Args:
-            track_path (str) : chemin de la nouvelle piste
-        """
-        logger.info(f"Track changée : {track_path}")
-        self._update_controls_ui(track=self.playlist.current_track)
-
+        """Slot appelé quand la piste change dans PlaylistServices."""
+        self._update_track(track_path)
 
     def _on_playback_state_changed(self, state: str):
-        """
-        Slot appelé quand l'état de lecture change dans PlayerServices.
-
-        Args:
-            state (str) : 'playing', 'paused', 'stopped'
-        """
-        logger.info(f"État lecture : {state}")
-        self._update_controls_ui(state=PlaybackState(state))
-
+        """Slot appelé quand l'état change dans PlayerServices."""
+        self._update_state(state)
 
     def _on_volume_changed(self, volume: float):
-        """
-        Slot appelé quand le volume change dans PlayerServices.
-
-        Args:
-            volume (float) : volume entre 0.0 et 1.0
-        """
-        logger.info(f"Volume changé : {volume*100:.0f}%")
-        self._update_controls_ui(volume=volume)
-        
-        
+        """Slot appelé quand le volume change dans PlayerServices."""
+        self._update_volume(volume)
+    
+    
     # ========================= #
     #   Mise à jour UI centralisée
     # ========================= #
-    def _update_controls_ui(
-        self,
-        track=None,
-        state: Optional[PlaybackState] = None,
-        volume: Optional[float] = None
-    ) -> None:
-        """Met à jour tous les widgets UI en fonction des signaux reçus."""
-        if track:
-            self.controls.track_label.setText(track.title)
-        if state:
-            self.controls.update_play_pause_icon(state)
-        if volume is not None:
-            self.controls.volume_slider.setValue(int(volume * 100))   
+    def _update_track(self, track_path: str):
+        self.controls.set_track(self.playlist.current_track)
+
+    def _update_state(self, state: str):
+        self.controls.set_state(PlaybackState(state))
+
+    def _update_volume(self, volume: float):
+        self.controls.set_volume(volume)
             
                  

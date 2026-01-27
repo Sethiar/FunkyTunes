@@ -93,4 +93,21 @@ class PlayerControls(QWidget):
         self.volume_down_button.clicked.connect(self.request_volume_down.emit)
         self.mute_button.clicked.connect(self.request_volume_mute.emit)
         
-        
+    
+    # ============================ # 
+    #     Méthodes publiques       #
+    # ============================ # 
+    def set_track(self, track):
+        """Met à jour le titre de la piste affiché."""
+        # Si tu as un QLabel pour le titre, tu le mets ici
+        if hasattr(self, "track_label"):
+            self.track_label.setText(track.title if track else "")
+
+    def set_state(self, state):
+        """Met à jour les icônes Play/Pause selon l'état."""
+        self.update_play_pause_icon(state)
+
+    def set_volume(self, volume: float):
+        """Met à jour le slider de volume (0.0 à 1.0)."""
+        if hasattr(self, "volume_slider"):
+            self.volume_slider.setValue(int(volume * 100))

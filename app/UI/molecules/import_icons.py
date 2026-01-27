@@ -45,9 +45,9 @@ class ImportSourceBar(QWidget):
         
     def _connect_signals(self):
         """Connexion des signaux aux boutons du menu principal."""
-        self.folder_icon.clicked.connect(self.import_request_folder.emit)
-        self.cd_icon.clicked.connect(self.import_request_cd.emit)
-        self.usb_icon.clicked.connect(self.import_request_usb.emit)
+        self.folder_icon.clicked.connect(self._on_folder_clicked)
+        self.cd_icon.clicked.connect(self._on_cd)
+        self.usb_icon.clicked.connect(self._on_usb)
         
     
     def _on_folder_clicked(self):

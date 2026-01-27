@@ -5,7 +5,7 @@ from typing import Callable
 from sqlalchemy.orm import Session
 
 from app.UI.screens.home_screen import HomeScreen
-
+from app.UI.window_manager import WindowManager
 # Controllers
 from app.controllers.home_screen_controller import HomeScreenController
 from app.controllers.player_service_controller import PlayerServiceController
@@ -45,6 +45,10 @@ class AppManager:
         # Screens
         self.home_screen = HomeScreen()
         logger.info("HomeScreen initialisé")
+        
+        # Window Manager
+        self.window_manager = WindowManager()
+        logger.info("WindowManager initialisé")
         
         # Services Bibliothèque
         self.library_service = LibraryServices(session_factory)
@@ -96,14 +100,13 @@ class AppManager:
         logger.info("LibraryNavigator initialisé")
         
         
-        
-        
         # Controllers
         self.home_controller = HomeScreenController(
             self.home_screen,
             self.library_service,
             self.player_service,
-            self.library_presenter
+            self.library_presenter,
+            self.window_manager
         )
         logger.info("HomeScreenController initialisé")
 

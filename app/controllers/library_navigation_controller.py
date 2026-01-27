@@ -12,7 +12,12 @@ from core.logger import logger
 
 class LibraryNavigationController(QObject):
     """
-    Controller responsable de la navigation bibliothèque / playlists
+    Controller responsable de la navigation entre la bibliothèque et les playlists.
+    
+    Rôle :
+        - Écouter les signaux de l'UI (menu, bouton retour)
+        - Demander au presenter les données nécessaires
+        - Mettre à jour l'UI en conséquence
     """
     
     def __init__(
@@ -24,8 +29,7 @@ class LibraryNavigationController(QObject):
     ) -> None:
         """
         Docstring pour __init__
-        
-        :param self: Description
+
         :param menu_library: Description
         :type menu_library: MenuLibrary
         :param home_screen: Description
@@ -40,13 +44,14 @@ class LibraryNavigationController(QObject):
         self.playlist_panel = home_screen.content_stack.playlist_panel
         self.library_presenter = library_presenter
         
-        self._bind()
+        self._bind_signals()
 
     
     # ========================= #
     #      Binding signaux      #
     # ========================= #
-    def _bind(self):
+    def _bind_signals(self):
+        """Connecte les signaux du menu et du panel aux méthodes du controller."""
         self.menu.requested_all_playlist.connect(self._on_playlist_requested)
         self.playlist_panel.request_back_to_library.connect(
             self._on_back_requested
@@ -57,13 +62,17 @@ class LibraryNavigationController(QObject):
     #   Slots                   #
     # ========================= #
     def _on_playlist_requested(self):
+        """Affiche les playlists et leurs pistes."""
         logger.info("Affichage Playlist demandée")
         self.home_screen.content_stack.show_playlist()
+        # Récupère les pistes via le presenter
         tracks = self.library_presenter.refresh_tracks()
+        # Affiche les pistes sur le panel
         self.playlist_panel.display_tracks(tracks)
           
         
     def _on_back_requested(self):
+        """Retour à la bibliothèque principale."""
         logger.info("Retour bibliothèque")
         self.home_screen.content_stack.show_library()
         
